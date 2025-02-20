@@ -15,6 +15,7 @@ import UiBlocker from "../framework/ui-blocker/ui-blocker.js";
 import { UserAction, UpdateType, TimeLimit } from "../const.js";
 
 export default class CartPresenter {
+  #isLoading = true;
   #heroComponent = null;
   #cartContainerComponent = null;
   #goCatalogueButtonComponent = null;
@@ -70,29 +71,49 @@ export default class CartPresenter {
 
     switch (actionType) {
       case UserAction.INCREASE_COUNT:
+        if (this.#cartProductPresenter.get(productId)) {
+          this.#cartProductPresenter.get(productId).setCardEditing();
+        }
+
         try {
           await this.#cartModel.increaseProductQuantity(updateType, productId);
-        } catch (err) {
-          console.log(err);
+        } catch {
+          this.#cartProductPresenter.get(productId).setAborting();
         }
         break;
 
       case UserAction.DECREASE_COUNT:
+        if (this.#cartProductPresenter.get(productId)) {
+          this.#cartProductPresenter.get(productId).setCardEditing();
+        }
         try {
           await this.#cartModel.decreaseProductQuantity(updateType, productId);
-        } catch (err) {
-          console.log(err);
+        } catch {
+          this.#cartProductPresenter.get(productId).setAborting();
         }
         break;
 
       case UserAction.REMOVE_FROM_CART:
+        if (this.#cartProductPresenter.get(productId)) {
+          this.#cartProductPresenter.get(productId).setCardEditing();
+        }
         try {
-          await this.#cartModel.removeProductFromCartFull(
-            updateType,
-            productId
-          );
+          await this.#cartModel.removeProductFromCartFull(updateType, productId);
+        } catch {
+          this.#cartProductPresenter.get(productId).setAborting();
+        }
+        break;
+      case UserAction.CLEAR_CART:
+        this.#clearButtonComponent.updateElement({
+          isClearing: true,
+        });
+        try {
+          await this.#cartModel.clearCart();
         } catch (err) {
-          console.log(err);
+          this.#clearButtonComponent.updateElement({
+            isClearing: false,
+          });
+          this.#clearButtonComponent.shake();
         }
         break;
     }
@@ -103,17 +124,14 @@ export default class CartPresenter {
   #modelEventHandler = (updateType, data) => {
     switch (updateType) {
       case UpdateType.INIT:
+        this.#isLoading = false;
         this.#clearCards();
         this.#renderCart();
         break;
       case UpdateType.PATCH:
-        const patchedProduct = this.cartItems.find(
-          (product) => product.id === data.productId
-        );
+        const patchedProduct = this.cartItems.find((product) => product.id === data.productId);
         if (patchedProduct) {
-          const productPresenter = this.#cartProductPresenter.get(
-            patchedProduct.id
-          );
+          const productPresenter = this.#cartProductPresenter.get(patchedProduct.id);
           if (productPresenter) {
             productPresenter.init(patchedProduct);
           }
@@ -142,7 +160,7 @@ export default class CartPresenter {
 
     const prevHeroComponent = this.#heroComponent;
 
-    this.#heroComponent = new CartHeroView(isCartEmpty);
+    this.#heroComponent = new CartHeroView(isCartEmpty, this.#isLoading);
     this.#heroComponent.setCloseButtonClickHandler(this.#closeCart);
 
     if (prevHeroComponent === null) {
@@ -169,12 +187,10 @@ export default class CartPresenter {
     if (!this.#goCatalogueButtonComponent) {
       this.#goCatalogueButtonComponent = new CartButtonGoCatalogueView();
       render(this.#goCatalogueButtonComponent, container);
-      this.#goCatalogueButtonComponent.setCartButtonGoCatalogueClickHandler(
-        () => {
-          this.#filterModel.resetFilters(UpdateType.MAJOR);
-          this.#closeCart();
-        }
-      );
+      this.#goCatalogueButtonComponent.setCartButtonGoCatalogueClickHandler(() => {
+        this.#filterModel.resetFilters(UpdateType.MAJOR);
+        this.#closeCart();
+      });
     }
   };
 
@@ -197,10 +213,7 @@ export default class CartPresenter {
     if (cartItem.id === undefined) {
       return;
     }
-    const cartProductPresenter = new CartProductPresenter(
-      container,
-      this.#viewActionHandler
-    );
+    const cartProductPresenter = new CartProductPresenter(container, this.#viewActionHandler);
 
     cartProductPresenter.init(cartItem);
     this.#cartProductPresenter.set(cartItem.id, cartProductPresenter);
@@ -212,9 +225,7 @@ export default class CartPresenter {
     if (!this.#clearButtonComponent) {
       this.#clearButtonComponent = new CartButtonClearView();
       render(this.#clearButtonComponent, container);
-      this.#clearButtonComponent.setCartButtonClearClickHandler(() => {
-        this.#cartModel.clearCart();
-      });
+      this.#clearButtonComponent.setCartButtonClearClickHandler(this.#clearButtonClickHandler);
     }
 
     if (isCartEmpty) {
@@ -224,19 +235,17 @@ export default class CartPresenter {
     }
   };
 
+  #clearButtonClickHandler = () => {
+    this.#viewActionHandler(UserAction.CLEAR_CART);
+  };
+
   #renderSummary = (container) => {
     if (!this.#summaryComponent) {
-      this.#summaryComponent = new SummaryView(
-        this.#cartModel.getProductCount(),
-        this.#cartModel.getSum()
-      );
+      this.#summaryComponent = new SummaryView(this.#cartModel.getProductCount(), this.#cartModel.getSum());
       render(this.#summaryComponent, container);
     } else {
       const prevSummaryComponent = this.#summaryComponent;
-      const updatedSummary = new SummaryView(
-        this.#cartModel.getProductCount(),
-        this.#cartModel.getSum()
-      );
+      const updatedSummary = new SummaryView(this.#cartModel.getProductCount(), this.#cartModel.getSum());
       replace(updatedSummary, this.#summaryComponent);
       this.#summaryComponent = updatedSummary;
       remove(prevSummaryComponent);

@@ -1,16 +1,9 @@
 import AbstractStatefulView from "../framework/view/abstract-stateful-view.js";
 import { formatPrice } from "../utils/common.js";
 
-const createCartCardView = ({
-  title,
-  description,
-  count,
-  price,
-  previewImage,
-  isProductEditing,
-}) => `
+const createCartCardView = ({ title, description, count, price, previewImage, isProductEditing }) => `
               <li class="popup-deferred__item">
-                <div class="deferred-card">
+                <div class="deferred-card ${isProductEditing ? "is-loading" : ""}">
                   <div class="deferred-card__img">
                     <picture>
                       <img src="${previewImage}" width="344" height="408" alt="букет">
@@ -37,7 +30,7 @@ const createCartCardView = ({
                     </button>
                   </div>
                   <div class="deferred-card__price"><b class="price price--size-middle-p">${formatPrice(
-                    price
+                    price,
                   )}<span>Р</span></b>
                   </div>
                   <button class="btn-close deferred-card__close-btn" type="button">
@@ -70,25 +63,18 @@ export default class CartCardView extends AbstractStatefulView {
 
   setDecreaseCountClickHandler = (callback) => {
     this._callback.decreaseCountClick = callback;
-    this.element
-      .querySelector(".btn-calculate--decrease")
-      .addEventListener("click", this.#decreaseCountClickHandler);
+    this.element.querySelector(".btn-calculate--decrease").addEventListener("click", this.#decreaseCountClickHandler);
   };
 
   setIncreaseCountClickHandler = (callback) => {
     this._callback.increaseCountClick = callback;
-    this.element
-      .querySelector(".btn-calculate--increase")
-      .addEventListener("click", this.#increaseCountClickHandler);
+    this.element.querySelector(".btn-calculate--increase").addEventListener("click", this.#increaseCountClickHandler);
   };
 
   setDeleteButtonClickHandler = (callback) => {
     this._callback.deleteButtonClick = callback;
-    this.element
-      .querySelector(".deferred-card__close-btn")
-      .addEventListener("click", this.#deleteButtonClickHandler);
+    this.element.querySelector(".deferred-card__close-btn").addEventListener("click", this.#deleteButtonClickHandler);
   };
-
 
   #decreaseCountClickHandler = (evt) => {
     evt.preventDefault();

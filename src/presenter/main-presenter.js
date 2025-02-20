@@ -22,7 +22,8 @@ export default class MainPresenter {
   #filterModel = null;
   #cartModel = null;
 
-  #isLoading = true;
+  #isProductsLoading = true;
+  #isCartLoading = true;
 
   #cataloguePresenter = null;
   #productPopupPresenter = null;
@@ -36,7 +37,8 @@ export default class MainPresenter {
     this.#filterModel = filterModel;
     this.#cartModel = cartModel;
 
-    this.#productsModel.addObserver(this.#modelEventHandler);
+    this.#productsModel.addObserver(this.#productsModelEventHandler);
+    this.#cartModel.addObserver(this.#cartModelEventHandler);
   }
 
   init = () => {
@@ -47,27 +49,60 @@ export default class MainPresenter {
 
     switch (actionType) {
       case UserAction.ADD_TO_CART:
-        await this.#cartModel.addProductToCart(updateType, updateProduct);
+        if (this.#productPopupPresenter) {
+          this.#modalContainer.classList.add("is-loading");
+          this.#productPopupPresenter.setProductEditing();
+        }
+        try {
+          await this.#cartModel.addProductToCart(updateType, updateProduct);
+          this.#modalContainer.classList.remove("is-loading");
+        } catch {
+          this.#productPopupPresenter.setAborting();
+          this.#modalContainer.classList.remove("is-loading");
+        }
         break;
       case UserAction.REMOVE_FROM_CART:
-        await this.#cartModel.removeProductFromCartFull(updateType, updateProduct);
+        if (this.#productPopupPresenter) {
+          this.#modalContainer.classList.add("is-loading");
+          this.#productPopupPresenter.setProductEditing();
+        }
+        try {
+          await this.#cartModel.removeProductFromCartFull(updateType, updateProduct);
+          this.#modalContainer.classList.remove("is-loading");
+        } catch {
+          this.#productPopupPresenter.setAborting();
+          this.#modalContainer.classList.remove("is-loading");
+        }
         break;
     }
 
     this.#uiBlocker.unblock();
   };
 
-  #modelEventHandler = (updateType) => {
+  #productsModelEventHandler = (updateType) => {
     switch (updateType) {
       case UpdateType.INIT:
-        this.#isLoading = false;
-        this.#renderMainBoard();
+        this.#isProductsLoading = false;
+        if (!this.#isCartLoading) {
+          this.#renderMainBoard();
+        }
+        break;
+    }
+  };
+
+  #cartModelEventHandler = (updateType) => {
+    switch (updateType) {
+      case UpdateType.INIT:
+        this.#isCartLoading = false;
+        if (!this.#isProductsLoading) {
+          this.#renderMainBoard();
+        }
         break;
     }
   };
 
   #renderMainBoard() {
-    if (this.#isLoading) {
+    if (this.#isProductsLoading || this.#isCartLoading) {
       render(this.#productsListLoadingComponent, this.#container, RenderPosition.BEFOREEND);
       return;
     }
@@ -85,7 +120,6 @@ export default class MainPresenter {
         this.#filterModel,
         this.#cartModel,
         this.#showProductPopupComponent,
-        // this.#onEscKeyDown
       );
     }
     this.#cataloguePresenter.init();
@@ -95,6 +129,13 @@ export default class MainPresenter {
     this.#modalContainer.classList.add("is-loading");
 
     if (!this.#productPopupPresenter) {
+      modals._settings.default.closeCallback = () => {
+        setTimeout(() => {
+          this.#productPopupPresenter.clear();
+        }, 600);
+      };
+      modals._setSettings("default");
+
       this.#productPopupPresenter = new ProductPopupPresenter(
         this.#modalContainer.querySelector(".modal-product"),
         this.#viewActionHandler,
@@ -102,22 +143,24 @@ export default class MainPresenter {
       );
     }
 
-    const detailedProduct = await this.#productsModel.getDetailedProduct(product.id);
+    try {
+      const detailedProduct = await this.#productsModel.getDetailedProduct(product.id);
 
-    this.#productPopupPresenter.init(detailedProduct);
-    const imageSlider = new ImageSlider(".image-slider");
-    imageSlider.init();
-    this.#modalContainer.classList.remove("is-loading");
+      this.#productPopupPresenter.init(detailedProduct);
+      const imageSlider = new ImageSlider(".image-slider");
+      imageSlider.init();
+      this.#modalContainer.classList.remove("is-loading");
+    } catch {
+      this.#productPopupPresenter.productErrorLoadingRender();
+      this.#modalContainer.classList.remove("is-loading");
+      setTimeout(() => {
+        modals.close("popup-product-details");
+      }, 10000);
+    }
   };
 
   #showProductPopupComponent = (product) => {
-    console.log(product);
-    // if (this.#selectedProduct && this.#selectedProduct.id === product.id) {
-    //   return;
-    // }
-
     modals.open("popup-product-details");
     this.#renderProductPopup(product);
-    // document.body.classList.add("hide-overflow");
   };
 }

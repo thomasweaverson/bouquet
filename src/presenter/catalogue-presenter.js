@@ -4,31 +4,18 @@ import ProductCardPresenter from "./product-card-presenter.js";
 
 import UiBlocker from "../framework/ui-blocker/ui-blocker.js";
 
-import {
-  render,
-  replace,
-  remove,
-  RenderPosition,
-} from "../framework/render.js";
+import { render, replace, remove, RenderPosition } from "../framework/render.js";
 
-import {
-  sortProductsByPriceIncrease,
-  sortProductsByPriceDecrease,
-} from "../utils/common";
+import { sortProductsByPriceIncrease, sortProductsByPriceDecrease } from "../utils/common";
 
-import {
-  PRODUCT_COUNT_PER_STEP,
-  SortType,
-  UserAction,
-  UpdateType,
-  TimeLimit,
-} from "../const.js";
+import { PRODUCT_COUNT_PER_STEP, SortType, UserAction, UpdateType, TimeLimit } from "../const.js";
 import CatalogueContainerView from "../view/catalogue-container-view.js";
 import CatalogueListView from "../view/catalogue-list-view.js";
 import CatalogueButtonsWrapperView from "../view/catalogue-buttons-wrapper-view.js";
 import CatalogueButtonShowMoreView from "../view/catalogue-button-showmore-view.js";
 import CatalogueButtonGoTopView from "../view/catalogue-button-go-top-view.js";
 import { filterByReason, filterByColor } from "../utils/filter.js";
+import ProductsListNoRelevantView from "../view/products-list-no-relevant-view.js";
 
 export default class CataloguePresenter {
   #sortComponent = null;
@@ -37,6 +24,8 @@ export default class CataloguePresenter {
   #buttonsWrapperComponent = new CatalogueButtonsWrapperView();
   #buttonShowmoreComponent = new CatalogueButtonShowMoreView();
   #buttonGoTopComponent = new CatalogueButtonGoTopView();
+
+  #noRelevantComponent = new ProductsListNoRelevantView();
 
   #container = null;
   #productsModel = null;
@@ -52,13 +41,7 @@ export default class CataloguePresenter {
 
   #uiBlocker = new UiBlocker(TimeLimit.LOWER_LIMIT, TimeLimit.UPPER_LIMIT);
 
-  constructor(
-    container,
-    productsModel,
-    filterModel,
-    cartModel,
-    showDetailedProduct
-  ) {
+  constructor(container, productsModel, filterModel, cartModel, showDetailedProduct) {
     this.#container = container;
     this.#productsModel = productsModel;
     this.#filterModel = filterModel;
@@ -76,10 +59,7 @@ export default class CataloguePresenter {
 
     const products = this.#productsModel.getAll();
 
-    const filteredProducts = filterByColor(
-      filterByReason[currentReasonFilter](products),
-      currentColorFilter
-    );
+    const filteredProducts = filterByColor(filterByReason[currentReasonFilter](products), currentColorFilter);
 
     switch (this.#currentSortType) {
       case SortType.PRICE_INCREASE:
@@ -95,15 +75,29 @@ export default class CataloguePresenter {
     this.#renderCatalogueBoard();
   }
 
-  #viewActionHandler = (actionType, updateType, productId) => {
+  #viewActionHandler = async (actionType, updateType, productId) => {
     this.#uiBlocker.block();
 
     switch (actionType) {
       case UserAction.ADD_TO_CART:
-        this.#cartModel.addProductToCart(updateType, productId);
+        if (this.#productCardPresenter.get(productId)) {
+          this.#productCardPresenter.get(productId).setProductEditing();
+        }
+        try {
+          await this.#cartModel.addProductToCart(updateType, productId);
+        } catch {
+          this.#productCardPresenter.get(productId).setAborting();
+        }
         break;
       case UserAction.REMOVE_FROM_CART:
-        this.#cartModel.removeProductFromCartFull(updateType, productId);
+        if (this.#productCardPresenter.get(productId)) {
+          this.#productCardPresenter.get(productId).setProductEditing();
+        }
+        try {
+          await this.#cartModel.removeProductFromCartFull(updateType, productId);
+        } catch {
+          this.#productCardPresenter.get(productId).setAborting();
+        }
         break;
     }
     this.#uiBlocker.unblock();
@@ -120,9 +114,10 @@ export default class CataloguePresenter {
       // case UpdateType.INIT:
       // Logik for init, если понадобится, возможно для ошибок, объединено с мажором
       case UpdateType.MAJOR:
+        const resetSortType = data ? data.isFilterChanged : true;
         this.#clearCatalogueBoard({
           resetRenderedProductCount: true,
-          resetSortType: !data.isFilterChanged,
+          resetSortType,
         });
         this.#renderCatalogueBoard();
         break;
@@ -131,16 +126,12 @@ export default class CataloguePresenter {
 
   #renderButtonShowMore = (container) => {
     render(this.#buttonShowmoreComponent, container, RenderPosition.AFTERBEGIN);
-    this.#buttonShowmoreComponent.setCatalogueButtonShowMoreClickHandler(
-      this.#showMoreButtonClickHandler
-    );
+    this.#buttonShowmoreComponent.setCatalogueButtonShowMoreClickHandler(this.#showMoreButtonClickHandler);
   };
 
   #renderButtonGoTop = (container) => {
     render(this.#buttonGoTopComponent, container, RenderPosition.BEFOREEND);
-    this.#buttonGoTopComponent.setCatalogueButtonGoTopClickHandler(
-      this.#goTopButtonClickHandler
-    );
+    this.#buttonGoTopComponent.setCatalogueButtonGoTopClickHandler(this.#goTopButtonClickHandler);
   };
 
   #sortTypeChangeHandler = (sortType) => {
@@ -150,10 +141,7 @@ export default class CataloguePresenter {
 
     this.#currentSortType = sortType;
 
-    const products = this.products.slice(
-      0,
-      Math.min(this.products.length, PRODUCT_COUNT_PER_STEP)
-    );
+    const products = this.products.slice(0, Math.min(this.products.length, PRODUCT_COUNT_PER_STEP));
 
     this.#clearProductsList();
     this.#renderSort(this.#containerComponent.element);
@@ -166,7 +154,7 @@ export default class CataloguePresenter {
     this.#sortComponent.setSortTypeChangeHandler(this.#sortTypeChangeHandler);
 
     if (prevSortComponent === null) {
-      render(this.#sortComponent, container);
+      render(this.#sortComponent, container, RenderPosition.AFTERBEGIN);
       return;
     }
 
@@ -179,6 +167,12 @@ export default class CataloguePresenter {
   };
 
   #renderProductsList(products) {
+    if (products.length === 0) {
+      render(this.#noRelevantComponent, this.#containerComponent.element);
+      return;
+    }
+    remove(this.#noRelevantComponent);
+
     this.#renderProducts(products, this.#listComponent.element);
 
     if (this.products.length > PRODUCT_COUNT_PER_STEP) {
@@ -204,7 +198,7 @@ export default class CataloguePresenter {
       container,
       this.#viewActionHandler,
       this.#showDetailedProduct,
-      this.#cartModel
+      this.#cartModel,
     );
 
     productCardPresenter.init(product);
@@ -217,10 +211,7 @@ export default class CataloguePresenter {
   }
 
   #renderCatalogueBoard() {
-    const products = this.products.slice(
-      0,
-      Math.min(this.products.length, PRODUCT_COUNT_PER_STEP)
-    );
+    const products = this.products.slice(0, Math.min(this.products.length, PRODUCT_COUNT_PER_STEP));
 
     this.#renderSort(this.#containerComponent.element);
     this.#renderProductsListContainer(this.#containerComponent.element);
@@ -231,10 +222,7 @@ export default class CataloguePresenter {
     render(this.#containerComponent, this.#container);
   }
 
-  #clearCatalogueBoard({
-    resetRenderedProductCount = false,
-    resetSortType = false,
-  }) {
+  #clearCatalogueBoard({ resetRenderedProductCount = false, resetSortType = false }) {
     this.#productCardPresenter.forEach((presenter) => presenter.destroy());
     this.#productCardPresenter.clear();
 
@@ -252,15 +240,9 @@ export default class CataloguePresenter {
   #showMoreButtonClickHandler = () => {
     const productsCount = this.products.length;
 
-    const newRenderedProductsCount = Math.min(
-      productsCount,
-      this.#renderedProductCount + PRODUCT_COUNT_PER_STEP
-    );
+    const newRenderedProductsCount = Math.min(productsCount, this.#renderedProductCount + PRODUCT_COUNT_PER_STEP);
 
-    const products = this.products.slice(
-      this.#renderedProductCount,
-      newRenderedProductsCount
-    );
+    const products = this.products.slice(this.#renderedProductCount, newRenderedProductsCount);
 
     this.#renderProducts(products, this.#listComponent.element);
 

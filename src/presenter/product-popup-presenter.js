@@ -3,6 +3,7 @@ import ProductPopupDescriptionView from "../view/product-popup-description-view.
 
 import { render, replace, remove } from "../framework/render.js";
 import { UpdateType, UserAction } from "../const";
+import ProductPopupErrorLoadingView from "../view/product-popup-error-loading-view.js";
 
 export default class ProductPopupPresenter {
   #container = null;
@@ -11,6 +12,7 @@ export default class ProductPopupPresenter {
 
   #productPopupGalleryComponent = null;
   #productPopupDescriptionComponent = null;
+  #productErrorLoadingComponent = new ProductPopupErrorLoadingView();
 
   #product = null;
 
@@ -24,63 +26,70 @@ export default class ProductPopupPresenter {
 
   init(product) {
     this.#product = product;
-    console.log("productPopupPresenter init, product:", product);
 
     const isProductInCart = this.#cartModel.isProductInCart(product.id);
 
     const prevProductPopupGalleryComponent = this.#productPopupGalleryComponent;
-    const prevProductPopupDescriptionComponent =
-      this.#productPopupDescriptionComponent;
+    const prevProductPopupDescriptionComponent = this.#productPopupDescriptionComponent;
 
     this.#productPopupGalleryComponent = new ProductPopupGalleryView(
       product.images,
       product.title,
-      product.authorPhoto
+      product.authorPhoto,
     );
     this.#productPopupDescriptionComponent = new ProductPopupDescriptionView(
       product.title,
       product.description,
       product.price,
-      isProductInCart
+      isProductInCart,
     );
 
-    this.#productPopupDescriptionComponent.setDeferButtonClickHandler(
-      this.#deferButtonClickHandler
-    );
+    this.#productPopupDescriptionComponent.setDeferButtonClickHandler(this.#deferButtonClickHandler);
 
-    if (
-      prevProductPopupGalleryComponent === null &&
-      prevProductPopupDescriptionComponent === null
-    ) {
+    if (prevProductPopupGalleryComponent === null && prevProductPopupDescriptionComponent === null) {
       render(this.#productPopupGalleryComponent, this.#container);
       render(this.#productPopupDescriptionComponent, this.#container);
       return;
     }
 
-    replace(
-      this.#productPopupGalleryComponent,
-      prevProductPopupGalleryComponent
-    );
-    replace(
-      this.#productPopupDescriptionComponent,
-      prevProductPopupDescriptionComponent
-    );
+    replace(this.#productPopupGalleryComponent, prevProductPopupGalleryComponent);
+    replace(this.#productPopupDescriptionComponent, prevProductPopupDescriptionComponent);
 
     remove(prevProductPopupGalleryComponent);
     remove(prevProductPopupDescriptionComponent);
   }
 
-  destroy() {
+  productErrorLoadingRender() {
     remove(this.#productPopupGalleryComponent);
     remove(this.#productPopupDescriptionComponent);
     this.#productPopupGalleryComponent = null;
     this.#productPopupDescriptionComponent = null;
+    render(this.#productErrorLoadingComponent, this.#container);
   }
+
+  clear() {
+    remove(this.#productPopupGalleryComponent);
+    remove(this.#productPopupDescriptionComponent);
+    remove(this.#productErrorLoadingComponent);
+    this.#productPopupGalleryComponent = null;
+    this.#productPopupDescriptionComponent = null;
+  }
+
+  setProductEditing = () => {
+    this.#productPopupDescriptionComponent.updateElement({
+      isProductEditing: true,
+    });
+  };
+
+  setAborting = () => {
+    this.#productPopupDescriptionComponent.updateElement({ isProductEditing: false });
+    this.#productPopupDescriptionComponent.shakeDeferBtn();
+  };
 
   #deferButtonClickHandler = () => {
     const isProductInCart = this.#cartModel.isProductInCart(this.#product.id);
     if (isProductInCart) {
-      this.#changeData(UserAction.REMOVE_FROM_CART,UpdateType.MINOR, this.#product.id);
+      this.#changeData(UserAction.REMOVE_FROM_CART, UpdateType.MINOR, this.#product.id);
     } else {
       this.#changeData(UserAction.ADD_TO_CART, UpdateType.MINOR, this.#product.id);
     }
@@ -107,31 +116,29 @@ export default class ProductPopupPresenter {
   };
 
   #rerenderProductPopupDescriptionComponent(isProductInCart) {
-    const prevProductPopupDescriptionComponent =
-          this.#productPopupDescriptionComponent;
-
-        this.#productPopupDescriptionComponent =
-          new ProductPopupDescriptionView(
-            this.#product.title,
-            this.#product.description,
-            this.#product.price,
-            isProductInCart
-          );
-
-        this.#productPopupDescriptionComponent.setDeferButtonClickHandler(
-          this.#deferButtonClickHandler
-        );
-
-        if (prevProductPopupDescriptionComponent === null) {
-          render(this.#productPopupDescriptionComponent, this.#container);
-          return;
-        }
-
-        replace(
-          this.#productPopupDescriptionComponent,
-          prevProductPopupDescriptionComponent
-        );
-
-        remove(prevProductPopupDescriptionComponent);
+    this.#productPopupDescriptionComponent.updateElement({
+      isProductEditing: false,
+      isInCart: isProductInCart,
+    });
   }
+  //   const prevProductPopupDescriptionComponent = this.#productPopupDescriptionComponent;
+
+  //   this.#productPopupDescriptionComponent = new ProductPopupDescriptionView(
+  //     this.#product.title,
+  //     this.#product.description,
+  //     this.#product.price,
+  //     isProductInCart,
+  //   );
+
+  //   this.#productPopupDescriptionComponent.setDeferButtonClickHandler(this.#deferButtonClickHandler);
+
+  //   if (prevProductPopupDescriptionComponent === null) {
+  //     render(this.#productPopupDescriptionComponent, this.#container);
+  //     return;
+  //   }
+
+  //   replace(this.#productPopupDescriptionComponent, prevProductPopupDescriptionComponent);
+
+  //   remove(prevProductPopupDescriptionComponent);
+  // }
 }

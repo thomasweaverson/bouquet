@@ -1,8 +1,8 @@
-import AbstractView from "../framework/view/abstract-view";
+import AbstractStatefulView from "../framework/view/abstract-stateful-view";
 
-const createCartButtonClearTemplate = () => `
+const createCartButtonClearTemplate = ({isClearing}) => `
             <div class="popup-deferred__btn-container">
-              <button class="btn btn--with-icon popup-deferred__btn-clean" type="button">очистить
+              <button class="btn btn--with-icon popup-deferred__btn-clean" type="button">${isClearing ? `очищаем` : `очистить`}
                 <svg width="61" height="24" aria-hidden="true">
                   <use xlink:href="#icon-arrow"></use>
                 </svg>
@@ -10,9 +10,13 @@ const createCartButtonClearTemplate = () => `
             </div>
             `;
 
-export default class CartButtonClearView extends AbstractView {
+export default class CartButtonClearView extends AbstractStatefulView {
+  constructor() {
+    super();
+    this._state = {isClearing: false};
+  }
   get template() {
-    return createCartButtonClearTemplate();
+    return createCartButtonClearTemplate(this._state);
   }
 
   hide() {
@@ -21,6 +25,10 @@ export default class CartButtonClearView extends AbstractView {
 
   show() {
     this.element.classList.remove(`visually-hidden`);
+  }
+
+  _restoreHandlers() {
+    this.setCartButtonClearClickHandler(this._callback.cartButtonClearClick);
   }
 
   setCartButtonClearClickHandler(callback) {

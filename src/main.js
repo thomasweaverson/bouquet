@@ -19,7 +19,7 @@ import MainPresenter from "./presenter/main-presenter";
 
 // Ваши импорты...
 
-const AUTHORIZATION = "Basic thomasweaverson:RealyGutPa$$w0rd";
+const AUTHORIZATION = "Basic thom:RealyGutPa$$w0rd";
 const END_POINT = "https://grading.objects.htmlacademy.pro/flowers-shop/";
 
 const appWrapperElement = document.querySelector("body div.wrapper");

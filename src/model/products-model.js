@@ -22,15 +22,14 @@ export default class ProductsModel extends Observable {
 
   getAll = () => this.#products;
 
-  getProduct = (productId) =>
-    this.#products.find((product) => product.id === productId);
+  getProduct = (productId) => this.#products.find((product) => product.id === productId);
 
   getDetailedProduct = async (productId) => {
     try {
       const product = await this.#apiService.getProduct(productId);
       return product;
-    } catch (err) {
-      console.log(err);
+    } catch {
+      throw new Error();
     }
   };
 }

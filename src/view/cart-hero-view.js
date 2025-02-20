@@ -1,7 +1,7 @@
 import AbstractView from "../framework/view/abstract-view";
 
-const createCartHeroTemplate = (message) => `
-          <section class="hero hero--popup">
+const createCartHeroTemplate = (message, isCartLoading) => `
+          <section class="hero hero--popup ${isCartLoading ? "is-loading" : ""}">
             <div class="hero__wrapper">
               <div class="hero__background">
                 <picture>
@@ -27,19 +27,19 @@ const createCartHeroTemplate = (message) => `
 
 export default class CartHeroView extends AbstractView {
   #message = null;
-  constructor(isCartEmpty) {
+  #isCartLoading = true;
+  constructor(isCartEmpty, isCartLoading) {
     super();
-    this.#message = isCartEmpty ? "Добавьте свой первый букет" : "Вас заинтересовали";
+    this.#message = isCartLoading ? "..." : isCartEmpty ? "Добавьте свой первый букет" : "Вас заинтересовали";
+    this.#isCartLoading = isCartLoading;
   }
   get template() {
-    return createCartHeroTemplate(this.#message);
+    return createCartHeroTemplate(this.#message, this.#isCartLoading);
   }
 
   setCloseButtonClickHandler(callback) {
     this._callback.closeButtonClick = callback;
-    this.element
-      .querySelector(".hero__popupclose")
-      .addEventListener("click", this.#closeButtonClickHandler);
+    this.element.querySelector(".hero__popupclose").addEventListener("click", this.#closeButtonClickHandler);
   }
 
   #closeButtonClickHandler = (evt) => {

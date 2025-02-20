@@ -25,17 +25,10 @@ export default class ProductCardPresenter {
     const isProductInCart = this.#cartModel.isProductInCart(product.id);
     const prevProductCardComponent = this.#productCardComponent;
 
-    this.#productCardComponent = new CatalogueProductCardView(
-      product,
-      isProductInCart
-    );
+    this.#productCardComponent = new CatalogueProductCardView(product, isProductInCart);
 
-    this.#productCardComponent.setProductCardClickHandler(
-      this.#cardClickHandler
-    );
-    this.#productCardComponent.setFavoriteButtonClickHandler(
-      this.#favoriteButtonClickHandler
-    );
+    this.#productCardComponent.setProductCardClickHandler(this.#cardClickHandler);
+    this.#productCardComponent.setFavoriteButtonClickHandler(this.#favoriteButtonClickHandler);
 
     if (prevProductCardComponent === null) {
       render(this.#productCardComponent, this.#container);
@@ -51,23 +44,25 @@ export default class ProductCardPresenter {
     remove(this.#productCardComponent);
   };
 
-  //setEditing
-  //setAborting
+  setProductEditing = () => {
+    this.#productCardComponent.updateElement({
+      isProductEditing: true,
+    });
+  };
+
+  setAborting = () => {
+    this.#productCardComponent.updateElement({
+      isProductEditing: false,
+    });
+    this.#productCardComponent.shake();
+  };
 
   #favoriteButtonClickHandler = () => {
     const isProductInCart = this.#cartModel.isProductInCart(this.#product.id);
     if (isProductInCart) {
-      this.#changeData(
-        UserAction.REMOVE_FROM_CART,
-        UpdateType.MINOR,
-        this.#product.id
-      );
+      this.#changeData(UserAction.REMOVE_FROM_CART, UpdateType.MINOR, this.#product.id);
     } else {
-      this.#changeData(
-        UserAction.ADD_TO_CART,
-        UpdateType.MINOR,
-        this.#product.id
-      );
+      this.#changeData(UserAction.ADD_TO_CART, UpdateType.MINOR, this.#product.id);
     }
   };
 }

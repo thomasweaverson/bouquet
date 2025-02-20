@@ -29,6 +29,7 @@ export default class FilterModel extends Observable {
   // Установка фильтра повода
   setReasonFilter = (updateType, newReason) => {
     this.#reasonFilter = newReason;
+
     this._notify(updateType, {
       reasonFilter: this.#reasonFilter,
       isFilterChanged: true,
