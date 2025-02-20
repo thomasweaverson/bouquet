@@ -36,7 +36,7 @@ export default class CartModel extends Observable {
     this._notify(UpdateType.INIT, { cart: this.#cart });
   };
 
-  getCart = () => this.#cart;
+  get = () => this.#cart;
 
   getProductCount = () => this.#cart.productCount;
 
@@ -46,18 +46,18 @@ export default class CartModel extends Observable {
 
   //========== SERVER ===========================
 
-  increaseProductQuantity = async (updateType, productId) => {
-    await this.addProductToCart(updateType, productId);
+  increase = async (updateType, productId) => {
+    await this.add(updateType, productId);
   };
 
-  decreaseProductQuantity = async (updateType, productId) => {
+  decrease = async (updateType, productId) => {
     if (updateType === UpdateType.MINOR) {
-      await this.removeProductFromCartFull(updateType, productId);
+      await this.removeFull(updateType, productId);
       return;
     }
-    const response = await this.#apiService.removeProductFromCart(productId);
+    const response = await this.#apiService.removeFromCart(productId);
     if (response.ok) {
-      this.#localRemoveProductFromCart(productId);
+      this.#localRemove(productId);
     } else {
       throw new Error();
     }
@@ -65,11 +65,11 @@ export default class CartModel extends Observable {
     this._notify(updateType, { productId, isProductInCart: true });
   };
 
-  addProductToCart = async (updateType, productId) => {
+  add = async (updateType, productId) => {
     try {
-      const response = await this.#apiService.addProductToCart(productId);
+      const response = await this.#apiService.addToCart(productId);
       if (response.id === productId) {
-        this.#localAddProductToCart(productId);
+        this.#localAdd(productId);
       }
     } catch {
       throw new Error();
@@ -77,21 +77,21 @@ export default class CartModel extends Observable {
     this._notify(updateType, { productId, isProductInCart: true });
   };
 
-  removeProductFromCartFull = async (updateType, productId) => {
+  removeFull = async (updateType, productId) => {
     const quantity = this.#cart.products[productId];
 
     for (let i = 0; i < quantity; i += 1) {
-      const response = await this.#apiService.removeProductFromCart(productId);
+      const response = await this.#apiService.removeFromCart(productId);
       if (response.ok) {
-        this.#localRemoveProductFromCart(productId);
-        this._notify(updateType, { productId, isProductInCart: false });
+        this.#localRemove(productId);
       } else {
         throw new Error();
       }
     }
+    this._notify(updateType, { productId, isProductInCart: false });
   };
 
-  clearCart = async () => {
+  clear = async () => {
     const isCartClearSuccess = await this.#apiService.clearCart();
     if (isCartClearSuccess === "success") {
       this.#cart = {
@@ -105,7 +105,7 @@ export default class CartModel extends Observable {
     }
   };
 
-  #localAddProductToCart = (productId) => {
+  #localAdd = (productId) => {
     this.#cart = {
       ...this.#cart,
       products: {
@@ -117,7 +117,7 @@ export default class CartModel extends Observable {
     };
   };
 
-  #localRemoveProductFromCart = (productId) => {
+  #localRemove = (productId) => {
     const isProductRemoved = this.#cart.products[productId] - 1 === 0;
     if (isProductRemoved) {
       delete this.#cart.products[productId];

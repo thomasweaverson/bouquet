@@ -46,9 +46,9 @@ export default class CartPresenter {
   }
 
   get cartItems() {
-    const allProducts = this.#productsModel.getAll();
+    const allProducts = this.#productsModel.get();
 
-    const cartProducts = this.#cartModel.getCart().products;
+    const cartProducts = this.#cartModel.get().products;
 
     const result = Object.keys(cartProducts).map((productId) => {
       const product = allProducts.find((product) => product.id === productId);
@@ -76,7 +76,7 @@ export default class CartPresenter {
         }
 
         try {
-          await this.#cartModel.increaseProductQuantity(updateType, productId);
+          await this.#cartModel.increase(updateType, productId);
         } catch {
           this.#cartProductPresenter.get(productId).setAborting();
         }
@@ -87,7 +87,7 @@ export default class CartPresenter {
           this.#cartProductPresenter.get(productId).setCardEditing();
         }
         try {
-          await this.#cartModel.decreaseProductQuantity(updateType, productId);
+          await this.#cartModel.decrease(updateType, productId);
         } catch {
           this.#cartProductPresenter.get(productId).setAborting();
         }
@@ -98,7 +98,7 @@ export default class CartPresenter {
           this.#cartProductPresenter.get(productId).setCardEditing();
         }
         try {
-          await this.#cartModel.removeProductFromCartFull(updateType, productId);
+          await this.#cartModel.removeFull(updateType, productId);
         } catch {
           this.#cartProductPresenter.get(productId).setAborting();
         }
@@ -108,7 +108,7 @@ export default class CartPresenter {
           isClearing: true,
         });
         try {
-          await this.#cartModel.clearCart();
+          await this.#cartModel.clear();
         } catch (err) {
           this.#clearButtonComponent.updateElement({
             isClearing: false,

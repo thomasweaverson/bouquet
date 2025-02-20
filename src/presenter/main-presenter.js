@@ -54,7 +54,7 @@ export default class MainPresenter {
           this.#productPopupPresenter.setProductEditing();
         }
         try {
-          await this.#cartModel.addProductToCart(updateType, updateProduct);
+          await this.#cartModel.add(updateType, updateProduct);
           this.#modalContainer.classList.remove("is-loading");
         } catch {
           this.#productPopupPresenter.setAborting();
@@ -67,7 +67,7 @@ export default class MainPresenter {
           this.#productPopupPresenter.setProductEditing();
         }
         try {
-          await this.#cartModel.removeProductFromCartFull(updateType, updateProduct);
+          await this.#cartModel.removeFull(updateType, updateProduct);
           this.#modalContainer.classList.remove("is-loading");
         } catch {
           this.#productPopupPresenter.setAborting();
@@ -108,7 +108,7 @@ export default class MainPresenter {
     }
     remove(this.#productsListLoadingComponent);
 
-    if (this.#productsModel.getAll().length === 0) {
+    if (this.#productsModel.get().length === 0) {
       render(this.#productsListEmptyComponent, this.#container, RenderPosition.BEFOREEND);
       return;
     }

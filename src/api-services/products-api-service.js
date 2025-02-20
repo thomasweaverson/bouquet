@@ -2,7 +2,7 @@ import ApiService from "../framework/api-service";
 import { Method } from "../const";
 
 export default class ProductsApiService extends ApiService {
-  getAll = () =>
+  get = () =>
     this._load({ url: "products" })
       .then(ApiService.parseResponse)
       .catch(() => null);
@@ -12,12 +12,12 @@ export default class ProductsApiService extends ApiService {
       .then(ApiService.parseResponse)
       .catch(() => null);
 
-  addProductToCart = (productId) =>
+  addToCart = (productId) =>
     this._load({ url: `products/${productId}`, method: Method.PUT })
       .then(ApiService.parseResponse)
       .catch(() => null);
 
-  removeProductFromCart = (productId) =>
+  removeFromCart = (productId) =>
     this._load({ url: `products/${productId}`, method: Method.DELETE })
       .then((response) => {
         if (response.ok) {
@@ -37,12 +37,10 @@ export default class ProductsApiService extends ApiService {
   clearCart = async () => {
     const currentCart = await this.getCart();
 
-    // 2. Проходим по всем товарам в корзине
     for (const productId in currentCart.products) {
       if (currentCart.products.hasOwnProperty(productId)) {
         const quantity = currentCart.products[productId];
 
-        // 3. Удаляем товар по одному, пока его количество не станет равным нулю
         for (let i = 0; i < quantity; i++) {
           await this.removeProductFromCart(productId);
         }
@@ -53,7 +51,7 @@ export default class ProductsApiService extends ApiService {
     if (updatedCart.productCount === 0) {
       return "success";
     } else {
-      throw new Error("Не удалось очистить корзину");
+      throw new Error();
     }
   };
 }

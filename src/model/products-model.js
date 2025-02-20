@@ -12,7 +12,7 @@ export default class ProductsModel extends Observable {
 
   init = async () => {
     try {
-      const products = await this.#apiService.getAll();
+      const products = await this.#apiService.get();
       this.#products = products;
     } catch (err) {
       this.#products = [];
@@ -20,7 +20,7 @@ export default class ProductsModel extends Observable {
     this._notify(UpdateType.INIT);
   };
 
-  getAll = () => this.#products;
+  get = () => this.#products;
 
   getProduct = (productId) => this.#products.find((product) => product.id === productId);
 

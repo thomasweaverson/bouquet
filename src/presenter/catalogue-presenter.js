@@ -57,7 +57,7 @@ export default class CataloguePresenter {
     const currentColorFilter = this.#filterModel.colorFilter;
     const currentReasonFilter = this.#filterModel.reasonFilter;
 
-    const products = this.#productsModel.getAll();
+    const products = this.#productsModel.get();
 
     const filteredProducts = filterByColor(filterByReason[currentReasonFilter](products), currentColorFilter);
 
@@ -84,7 +84,7 @@ export default class CataloguePresenter {
           this.#productCardPresenter.get(productId).setProductEditing();
         }
         try {
-          await this.#cartModel.addProductToCart(updateType, productId);
+          await this.#cartModel.add(updateType, productId);
         } catch {
           this.#productCardPresenter.get(productId).setAborting();
         }
@@ -94,7 +94,7 @@ export default class CataloguePresenter {
           this.#productCardPresenter.get(productId).setProductEditing();
         }
         try {
-          await this.#cartModel.removeProductFromCartFull(updateType, productId);
+          await this.#cartModel.removeFull(updateType, productId);
         } catch {
           this.#productCardPresenter.get(productId).setAborting();
         }
