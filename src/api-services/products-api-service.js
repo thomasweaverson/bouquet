@@ -42,7 +42,7 @@ export default class ProductsApiService extends ApiService {
         const quantity = currentCart.products[productId];
 
         for (let i = 0; i < quantity; i++) {
-          await this.removeProductFromCart(productId);
+          await this.removeFromCart(productId);
         }
       }
     }

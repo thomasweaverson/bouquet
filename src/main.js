@@ -1,8 +1,6 @@
-// Импорт вендоров и утилит, не удаляйте его
 import "./vendor";
-import { ImageSlider } from "./utils/image-slider";
 import { iosVhFix } from "./utils/ios-vh-fix";
-import { modals, initModals } from "./modals/init-modals";
+import { initModals } from "./modals/init-modals";
 
 import ProductsModel from "./model/products-model";
 import CartModel from "./model/cart-model";
@@ -14,7 +12,6 @@ import HeaderPresenter from "./presenter/header-presenter";
 import FilterPresenter from "./presenter/filter-presenter";
 import CartPresenter from "./presenter/cart-presenter";
 
-import CartUiStateModel from "./model/cart-ui-state-model";
 import MainPresenter from "./presenter/main-presenter";
 
 // Ваши импорты...
@@ -27,16 +24,15 @@ const siteHeaderCountElement = appWrapperElement.querySelector(".header__contain
 const cartElement = appWrapperElement.querySelector(".popup-deferred__wrapper");
 const mainElement = document.querySelector("main");
 
-const uiStateModel = new CartUiStateModel();
 const productsModel = new ProductsModel(new ProductsApiService(END_POINT, AUTHORIZATION));
 const cartModel = new CartModel(new ProductsApiService(END_POINT, AUTHORIZATION), productsModel);
 const filterModel = new FilterModel();
 
-const headerPresenter = new HeaderPresenter(siteHeaderCountElement, cartModel, uiStateModel, filterModel);
-
 const filterPresenter = new FilterPresenter(mainElement, filterModel);
 
-const cartPresenter = new CartPresenter(cartElement, cartModel, productsModel, uiStateModel, filterModel);
+const cartPresenter = new CartPresenter(cartElement, cartModel, productsModel, filterModel);
+
+const headerPresenter = new HeaderPresenter(siteHeaderCountElement, cartModel, cartPresenter, filterModel);
 
 const mainPresenter = new MainPresenter(mainElement, productsModel, filterModel, cartModel);
 
@@ -55,4 +51,3 @@ mainPresenter.init();
 
 productsModel.init();
 cartModel.init();
-uiStateModel.init();

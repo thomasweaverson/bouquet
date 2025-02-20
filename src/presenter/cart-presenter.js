@@ -15,6 +15,7 @@ import UiBlocker from "../framework/ui-blocker/ui-blocker.js";
 import { UserAction, UpdateType, TimeLimit } from "../const.js";
 
 export default class CartPresenter {
+  #isCartOpen = false;
   #isLoading = true;
   #heroComponent = null;
   #cartContainerComponent = null;
@@ -24,21 +25,21 @@ export default class CartPresenter {
   #summaryComponent = null;
 
   #container = null;
+  #popupDeferredElement = document.querySelector("section.popup-deferred");
+  #mainElement = document.querySelector("main");
 
   #cartModel = null;
   #productsModel = null;
-  #uiStateModel = null;
   #filterModel = null;
 
   #cartProductPresenter = new Map();
 
   #uiBlocker = new UiBlocker(TimeLimit.LOWER_LIMIT, TimeLimit.UPPER_LIMIT);
 
-  constructor(container, cartModel, productsModel, uiStateModel, filterModel) {
+  constructor(container, cartModel, productsModel, filterModel) {
     this.#container = container;
     this.#cartModel = cartModel;
     this.#productsModel = productsModel;
-    this.#uiStateModel = uiStateModel;
     this.#filterModel = filterModel;
 
     this.#productsModel.addObserver(this.#modelEventHandler);
@@ -61,9 +62,18 @@ export default class CartPresenter {
     return result;
   }
 
+  get isCartOpen() {
+    return this.#isCartOpen;
+  }
+
   init() {
     this.#clearCards();
     this.#renderCart();
+  }
+
+  toggleCart = () => {
+    this.#isCartOpen = !this.#isCartOpen;
+    this.#updateUI();
   }
 
   #viewActionHandler = async (actionType, updateType, productId) => {
@@ -113,6 +123,7 @@ export default class CartPresenter {
           this.#clearButtonComponent.updateElement({
             isClearing: false,
           });
+          console.log(err);
           this.#clearButtonComponent.shake();
         }
         break;
@@ -158,7 +169,7 @@ export default class CartPresenter {
     const prevHeroComponent = this.#heroComponent;
 
     this.#heroComponent = new CartHeroView(isCartEmpty, this.#isLoading);
-    this.#heroComponent.setCloseButtonClickHandler(this.#closeCart);
+    this.#heroComponent.setCloseButtonClickHandler(this.toggleCart);
 
     if (prevHeroComponent === null) {
       render(this.#heroComponent, this.#container, RenderPosition.AFTERBEGIN);
@@ -186,7 +197,7 @@ export default class CartPresenter {
       render(this.#goCatalogueButtonComponent, container);
       this.#goCatalogueButtonComponent.setCartButtonGoCatalogueClickHandler(() => {
         this.#filterModel.resetFilters(UpdateType.MAJOR);
-        this.#closeCart();
+        this.toggleCart();
       });
     }
   };
@@ -254,7 +265,13 @@ export default class CartPresenter {
     this.#cartProductPresenter.clear();
   };
 
-  #closeCart = () => {
-    this.#uiStateModel.closeCart();
-  };
+  #updateUI() {
+    if (this.#isCartOpen) {
+      this.#popupDeferredElement.style.display = "block";
+      this.#mainElement.style.display = "none";
+    } else {
+      this.#popupDeferredElement.style.display = "none";
+      this.#mainElement.style.display = "block";
+    }
+  }
 }

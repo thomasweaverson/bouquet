@@ -6,15 +6,15 @@ export default class HeaderPresenter {
   #headerCountComponent = null;
 
   #cartModel = null;
-  #uiStateModel = null;
+  #cartPresenter = null;
 
   #productCount = 0;
   #sum = 0;
 
-  constructor(container, cartModel, uiStateModel) {
+  constructor(container, cartModel, cartPresenter) {
     this.#container = container;
     this.#cartModel = cartModel;
-    this.#uiStateModel = uiStateModel;
+    this.#cartPresenter = cartPresenter;
 
     this.#cartModel.addObserver(this.#modelEventHandler);
   }
@@ -31,9 +31,9 @@ export default class HeaderPresenter {
     );
 
     this.#headerCountComponent.setButtonCartClickHandler(() => {
-      const isCartOpen = this.#uiStateModel.isCartOpen;
+      const isCartOpen = this.#cartPresenter.isCartOpen;
       if (!isCartOpen) {
-        this.#uiStateModel.openCart();
+        this.#cartPresenter.toggleCart();
       }
     });
 
