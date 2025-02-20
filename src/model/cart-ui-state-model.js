@@ -1,7 +1,6 @@
 import Observable from "../framework/observable";
-import { UpdateType } from "../const";
 
-export default class UiStateModel extends Observable {
+export default class CartUiStateModel extends Observable {
   #isCartOpen;
 
   constructor() {
@@ -24,9 +23,6 @@ export default class UiStateModel extends Observable {
     document.querySelector('section.popup-deferred').style.display = 'none';
     document.querySelector('main').style.display = 'block';
   }
-
-  // resetSorting() {
-  // }
 
   init() {
     this.#isCartOpen = false;

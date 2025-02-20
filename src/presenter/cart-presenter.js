@@ -144,9 +144,6 @@ export default class CartPresenter {
         this.#renderCartContainer();
         this.#renderClearButton(this.#cartContainerComponent.element);
         break;
-      default:
-        console.warn(`Unknown update type: ${updateType}`);
-        break;
     }
   };
 

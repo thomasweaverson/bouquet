@@ -14,7 +14,7 @@ import HeaderPresenter from "./presenter/header-presenter";
 import FilterPresenter from "./presenter/filter-presenter";
 import CartPresenter from "./presenter/cart-presenter";
 
-import UiStateModel from "./model/ui-state-model";
+import CartUiStateModel from "./model/cart-ui-state-model";
 import MainPresenter from "./presenter/main-presenter";
 
 // Ваши импорты...
@@ -28,7 +28,7 @@ const siteHeaderCountElement =
 const cartElement = appWrapperElement.querySelector(".popup-deferred__wrapper");
 const mainElement = document.querySelector("main");
 
-const uiStateModel = new UiStateModel();
+const uiStateModel = new CartUiStateModel();
 const productsModel = new ProductsModel(
   new ProductsApiService(END_POINT, AUTHORIZATION)
 );
