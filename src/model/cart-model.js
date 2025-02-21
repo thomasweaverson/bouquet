@@ -44,8 +44,6 @@ export default class CartModel extends Observable {
 
   isProductInCart = (productId) => !!this.#cart.products[productId];
 
-  //========== SERVER ===========================
-
   increase = async (updateType, productId) => {
     await this.add(updateType, productId);
   };

@@ -1,5 +1,5 @@
-import { remove, render, replace } from "../framework/render.js";
-import { RenderPosition } from "../framework/render.js";
+import { remove, render, replace, RenderPosition } from "../framework/render.js";
+import { UserAction, UpdateType, TimeLimit } from "../const.js";
 
 import CartHeroView from "../view/cart-hero-view.js";
 import CartContainerView from "../view/cart-container-view.js";
@@ -8,13 +8,12 @@ import CartButtonClearView from "../view/cart-button-clear-view.js";
 import CartListView from "../view/cart-list-view.js";
 import SummaryView from "../view/cart-summary-view.js";
 
-import { mainElement, popupDeferredElement } from "../main.js";
-
 import DeferredCardPresenter from "./deferred-card-presenter.js";
 
 import UiBlocker from "../framework/ui-blocker/ui-blocker.js";
 
-import { UserAction, UpdateType, TimeLimit } from "../const.js";
+const popupDeferredElement = document.querySelector("section.popup-deferred");
+const mainElement = document.querySelector("main");
 
 export default class CartPresenter {
   #isCartOpen = false;

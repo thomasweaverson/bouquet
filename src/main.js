@@ -20,9 +20,9 @@ const END_POINT = "https://grading.objects.htmlacademy.pro/flowers-shop/";
 const appWrapperElement = document.querySelector("body div.wrapper");
 const siteHeaderCountElement = appWrapperElement.querySelector(".header__container");
 
-export const popupDeferredElement = document.querySelector("section.popup-deferred");
+const popupDeferredElement = document.querySelector("section.popup-deferred");
 const cartElement = appWrapperElement.querySelector(".popup-deferred__wrapper");
-export const mainElement = document.querySelector("main");
+const mainElement = document.querySelector("main");
 
 const productsModel = new ProductsModel(new ProductsApiService(END_POINT, AUTHORIZATION));
 const cartModel = new CartModel(new ProductsApiService(END_POINT, AUTHORIZATION), productsModel);
