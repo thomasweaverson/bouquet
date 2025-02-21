@@ -146,7 +146,6 @@ export default class MainPresenter {
   #modelEventHandler = (updateType, data) => {
     switch (updateType) {
       case UpdateType.INIT:
-        console.log("MAIN PRESENTER, data", data);
         if (data.origin === InitOrigin.PRODUCTS_MODEL) {
           this.#isProductsLoading = false;
         }

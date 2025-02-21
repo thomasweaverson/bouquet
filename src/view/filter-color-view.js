@@ -1,5 +1,5 @@
 import AbstractView from "../framework/view/abstract-view";
-import { ColorFilter, ColorFilters } from "../const";
+import { Color } from "../const";
 
 const createFilterColorItemTemplate = (filter, index, selectedFilters) => {
   const colorString = filter.value.slice(6);
@@ -8,9 +8,7 @@ const createFilterColorItemTemplate = (filter, index, selectedFilters) => {
           <div class="filter-field-img filter-color__form-field">
             <input class="filter-field-img__input filter-color__form-field" type="checkbox" id="filter-colors-field-id-${index}" name="colors" value="${
     filter.value
-  }" ${
-    selectedFilters.includes(filter.value) && "checked"
-  } data-filter-color="${filter.value}">
+  }" ${selectedFilters.includes(filter.value) && "checked"} data-filter-color="${filter.value}">
             <label class="filter-field-img__label" for="filter-colors-field-id-${index}">
               <span class="filter-field-img__img">
                 <picture>
@@ -28,9 +26,7 @@ const createFilterColorItemTemplate = (filter, index, selectedFilters) => {
 
 const createFilterColorTemplate = (filters, selectedFilters) => {
   const filterItems = filters
-    .map((filter, index) =>
-      createFilterColorItemTemplate(filter, index, selectedFilters)
-    )
+    .map((filter, index) => createFilterColorItemTemplate(filter, index, selectedFilters))
     .join("");
 
   return `
@@ -47,8 +43,8 @@ const createFilterColorTemplate = (filters, selectedFilters) => {
 };
 
 export default class FilterColorView extends AbstractView {
-  #filters = ColorFilters;
-  #selectedFilters = [ColorFilters[0].value];
+  #filters = Color.LABELS;
+  #selectedFilters = [Color.LABELS[0].value];
 
   constructor(selectedFilters) {
     super();
@@ -61,22 +57,15 @@ export default class FilterColorView extends AbstractView {
 
   setFilterColorClickHandler(callback) {
     this._callback.filterColorClick = callback;
-    this.element
-      .querySelector(".filter-color__form")
-      .addEventListener("click", this.#filterColorClickHandler);
+    this.element.querySelector(".filter-color__form").addEventListener("click", this.#filterColorClickHandler);
   }
 
-
-
   #filterColorClickHandler = (evt) => {
-    //отступление от тз, кликнуть можно и по лейблу 
-    // Находим ближайший label
     const target = evt.target.closest("label");
     if (!target) {
       return;
     }
 
-    // Получаем связанный с label input по атрибуту for
     const inputId = target.getAttribute("for");
     if (!inputId) {
       return;
@@ -87,38 +76,31 @@ export default class FilterColorView extends AbstractView {
       return;
     }
 
-    // Явно меняем состояние чекбокса
     input.checked = !input.checked;
 
-    // Получаем форму, содержащую чекбоксы
     const form = input.closest(".filter-color__form");
     if (!form) {
       return;
     }
 
-    // Обработка случая, когда выбран "ALL"
-    if (input.value === ColorFilter.ALL) {
-      // Если "ALL" выбран, очищаем все остальные фильтры
+    if (input.value === Color.FILTER.ALL) {
       const checkboxes = form.querySelectorAll('input[name="colors"]');
       checkboxes.forEach((checkbox) => {
-        if (checkbox.value !== ColorFilter.ALL) {
-          checkbox.checked = false; // Снимаем галочки с других чекбоксов
+        if (checkbox.value !== Color.FILTER.ALL) {
+          checkbox.checked = false;
         } else {
-          checkbox.checked = true; // Добавляем галочку на "ALL"
+          checkbox.checked = true;
         }
       });
-      this._callback.filterColorClick([ColorFilter.ALL]);
+      this._callback.filterColorClick([Color.FILTER.ALL]);
       return;
     }
 
-    // Собираем выбранные фильтры
     const selectedFilters = [...form.querySelectorAll('input[name="colors"]')]
-      .filter((checkbox) => checkbox.checked) // Берем только отмеченные чекбоксы
-      .filter((checkbox) => checkbox.value !== ColorFilter.ALL)
-      .map((checkbox) => checkbox.value); // Преобразуем в массив значений
+      .filter((checkbox) => checkbox.checked)
+      .filter((checkbox) => checkbox.value !== Color.FILTER.ALL)
+      .map((checkbox) => checkbox.value);
 
-    // Вызываем коллбэк с выбранными фильтрами
     this._callback.filterColorClick(selectedFilters);
   };
 }
-

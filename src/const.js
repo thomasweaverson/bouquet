@@ -1,53 +1,47 @@
-const ReasonFilters = [
-  { name: "Для всех", value: "for-all" },
-  { name: "Именнинику", value: "for-birthday" },
-  { name: "Невесте", value: "for-bride" },
-  { name: "Маме", value: "for-mother" },
-  { name: "Коллеге", value: "for-colleague" },
-  { name: "Любимой", value: "for-darling" },
-];
-
-const ReasonLabel = {
-  birthdayboy: "именнинику",
-  bridge: "невесте",
-  motherday: "маме",
-  colleagues: "коллеге",
-  forlove: "любимой",
+const Reason = {
+  FILTER: {
+    ALL: "for-all",
+    BIRTHDAY: "for-birthday",
+    BRIDE: "for-bride",
+    MOTHER: "for-mother",
+    COLLEAGUE: "for-colleague",
+    DARLING: "for-darling",
+  },
+  LABELS: [
+    { name: "Для всех", value: "for-all" },
+    { name: "Именнинику", value: "for-birthday" },
+    { name: "Невесте", value: "for-bride" },
+    { name: "Маме", value: "for-mother" },
+    { name: "Коллеге", value: "for-colleague" },
+    { name: "Любимой", value: "for-darling" },
+  ],
+  STICKER: {
+    birthdayboy: "именнинику",
+    bridge: "невесте",
+    motherday: "маме",
+    colleagues: "коллеге",
+    forlove: "любимой",
+  },
 };
 
-const ReasonFilter = {
-  ALL: "for-all",
-  BIRTHDAY: "for-birthday",
-  BRIDE: "for-bride",
-  MOTHER: "for-mother",
-  COLLEAGUE: "for-colleague",
-  DARLING: "for-darling",
+const Color = {
+  FILTER: {
+    ALL: "color-all",
+    RED: "color-red",
+    WHITE: "color-white",
+    LILAC: "color-lilac",
+    YELLOW: "color-yellow",
+    PINK: "color-pink",
+  },
+  LABELS: [
+    { name: "Все цвета", value: "color-all" },
+    { name: "Красный", value: "color-red" },
+    { name: "Белые", value: "color-white" },
+    { name: "Сиреневый", value: "color-lilac" },
+    { name: "Желтые", value: "color-yellow" },
+    { name: "Розовый", value: "color-pink" },
+  ],
 };
-
-
-//=================
-const ColorFilters = [
-  { name: "Все цвета", value: "color-all" },
-  { name: "Красный", value: "color-red" },
-  { name: "Белые", value: "color-white" },
-  { name: "Сиреневый", value: "color-lilac" },
-  { name: "Желтые", value: "color-yellow" },
-  { name: "Розовый", value: "color-pink" },
-];
-
-const ColorFilter = {
-  ALL: "color-all",
-  RED: "color-red",
-  WHITE: "color-white",
-  LILAC: "color-lilac",
-  YELLOW: "color-yellow",
-  PINK: "color-pink",
-};
-
-
-
-
-//=====================
 
 const SortType = {
   DEFAULT: "price-increase",
@@ -83,21 +77,18 @@ const TimeLimit = {
 const InitOrigin = {
   CART_MODEL: "CART_MODEL",
   PRODUCTS_MODEL: "PRODUCTS_MODEL",
-}
+};
 
 const PRODUCT_COUNT_PER_STEP = 6;
 
 export {
-  ReasonFilters,
-  ReasonLabel,
-  ColorFilters,
-  ColorFilter,
-  ReasonFilter,
+  Reason,
+  Color,
   SortType,
   UserAction,
   UpdateType,
   Method,
   TimeLimit,
   InitOrigin,
-  PRODUCT_COUNT_PER_STEP,
+  PRODUCT_COUNT_PER_STEP
 };

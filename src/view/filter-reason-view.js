@@ -1,5 +1,5 @@
 import AbstractView from "../framework/view/abstract-view";
-import { ReasonFilters } from "../const";
+import { Reason } from "../const";
 
 const createFilterReasonItemTemplate = (filter, index, currentFilterReason) => {
   return `
@@ -39,7 +39,7 @@ const createFilterReasonTemplate = (filters, currentFilterReason) => {
 };
 
 export default class FilterReasonView extends AbstractView {
-  #filters = ReasonFilters;
+  #filters = Reason.LABELS;
   #currentFilterReason = null;
 
   constructor(currentFilterReason) {
@@ -59,7 +59,6 @@ export default class FilterReasonView extends AbstractView {
   }
 
   #filterReasonClickHandler = (evt) => {
-    // evt.preventDefault(); // вроде не надо
     const selectedValue = document.querySelector(
       'input[name="reason"]:checked'
     ).value;

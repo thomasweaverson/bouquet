@@ -1,5 +1,5 @@
 import AbstractStatefulView from "../framework/view/abstract-stateful-view";
-import { ReasonLabel } from "../const";
+import { Reason } from "../const";
 import { truncateString, formatPrice } from "../utils/common";
 
 const createCatalogueCardTemplate = ({
@@ -21,7 +21,7 @@ const createCatalogueCardTemplate = ({
                   <button class="item-card__btn" type="button" data-open-modal="product-card" aria-label="посмотреть товар" ${
                     isEditing ? "disabled" : ""
                   }></button>
-                  <p class="item-card__label">${ReasonLabel[type]}</p>
+                  <p class="item-card__label">${Reason.STICKER[type]}</p>
                   <div class="item-card__img-wrap">
                     <button class="button-heart item-card__to-fav-btn" type="button" aria-label="добавить в избранное" ${
                       isEditing ? "disabled" : ""
