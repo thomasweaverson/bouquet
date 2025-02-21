@@ -1,6 +1,6 @@
 import AbstractView from "../framework/view/abstract-view";
 
-const createProductPopupErrorLoadingTemplate = () => {
+const createPopupErrorLoadingTemplate = () => {
   return (
     `<div class="product-popup-error-loading">
       <p class="product-popup-error-loading__text">Извините, при загрузке товара произошла ошибка. Пожалуйста, попробуйте ещё раз.</p>
@@ -9,8 +9,8 @@ const createProductPopupErrorLoadingTemplate = () => {
   );
 };
 
-export default class ProductPopupErrorLoadingView extends AbstractView {
+export default class PopupErrorLoadingView extends AbstractView {
   get template() {
-    return createProductPopupErrorLoadingTemplate();
+    return createPopupErrorLoadingTemplate();
   }
 }

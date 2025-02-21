@@ -1,5 +1,5 @@
 import Observable from "../framework/observable";
-import { UpdateType } from "../const";
+import { UpdateType, InitOrigin } from "../const";
 
 export default class CartModel extends Observable {
   #cart = {
@@ -33,7 +33,7 @@ export default class CartModel extends Observable {
     } catch (err) {
       this.#cart = { ...emptyCart };
     }
-    this._notify(UpdateType.INIT, { cart: this.#cart });
+    this._notify(UpdateType.INIT, { cart: this.#cart, origin: InitOrigin.CART_MODEL });
   };
 
   get = () => this.#cart;

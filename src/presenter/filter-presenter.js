@@ -20,7 +20,7 @@ export default class FilterPresenter {
     this.#filterModel.addObserver(this.#modelEventHandler);
   }
 
-  init() {
+  init = () => {
     this.#currentReasonFilter = this.#filterModel.reasonFilter;
     this.#currentColorFilter = this.#filterModel.colorFilter;
 

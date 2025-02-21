@@ -1,14 +1,14 @@
 import AbstractView from "../framework/view/abstract-view";
 
-const createCatalogueButtonShowMoreTemplate = () =>
+const createButtonShowMoreTemplate = () =>
   `<button class="btn btn--outlined catalogue__show-more-btn" type="button">больше букетов</button>`;
 
 export default class CatalogueButtonShowMoreView extends AbstractView {
   get template() {
-    return createCatalogueButtonShowMoreTemplate();
+    return createButtonShowMoreTemplate();
   }
 
-  setCatalogueButtonShowMoreClickHandler(callback) {
+  setButtonShowMoreClickHandler(callback) {
     this._callback.showMoreButtonClick = callback;
     this.element.addEventListener('click', this.#showMoreButtonClickHandler);
   }

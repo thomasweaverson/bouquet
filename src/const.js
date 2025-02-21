@@ -73,6 +73,11 @@ const TimeLimit = {
   UPPER_LIMIT: 1000,
 };
 
+const InitOrigin = {
+  CART_MODEL: "CART_MODEL",
+  PRODUCTS_MODEL: "PRODUCTS_MODEL",
+}
+
 const PRODUCT_COUNT_PER_STEP = 6;
 
 export {
@@ -86,5 +91,6 @@ export {
   UpdateType,
   Method,
   TimeLimit,
+  InitOrigin,
   PRODUCT_COUNT_PER_STEP,
 };

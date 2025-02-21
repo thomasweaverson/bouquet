@@ -1,5 +1,5 @@
 import Observable from "../framework/observable";
-import { UpdateType } from "../const";
+import { InitOrigin, UpdateType } from "../const";
 
 export default class ProductsModel extends Observable {
   #products = [];
@@ -16,8 +16,9 @@ export default class ProductsModel extends Observable {
       this.#products = products;
     } catch (err) {
       this.#products = [];
+      this._notify(UpdateType.INIT, { origin: InitOrigin.PRODUCTS_MODEL });
     }
-    this._notify(UpdateType.INIT);
+    this._notify(UpdateType.INIT, { origin: InitOrigin.PRODUCTS_MODEL });
   };
 
   get = () => this.#products;

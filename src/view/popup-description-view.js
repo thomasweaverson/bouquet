@@ -1,8 +1,8 @@
 import AbstractStatefulView from "../framework/view/abstract-stateful-view.js";
-import { formatPrice } from "../utils/common";
+import { formatPrice } from "../utils/common.js";
 
-const createProductPopupDescriptionTemplate = ({ title, description, price, isInCart, isProductEditing }) => {
-  const btnText = isInCart ? "отложено" : "отложить";
+const createPopupDescriptionTemplate = ({ title, description, price, isInCart, isEditing }) => {
+  const buttonText = isInCart ? "отложено" : "отложить";
   return `
             <div class="product-description">
               <div class="product-description__header">
@@ -12,18 +12,18 @@ const createProductPopupDescriptionTemplate = ({ title, description, price, isIn
               </div>
               <p class="text text--size-40">${description}</p>
               <button class="btn btn--outlined btn--full-width product-description__button" type="button" data-focus ${
-                isProductEditing ? "disabled" : ""
+                isEditing ? "disabled" : ""
               }>
-                ${btnText}
+                ${buttonText}
               </button>
             </div>
 `;
 };
 
-export default class ProductPopupDescriptionView extends AbstractStatefulView {
+export default class PopupDescriptionView extends AbstractStatefulView {
   constructor(title, description, price, isInCart) {
     super();
-    this._state = ProductPopupDescriptionView.parseProductToState({
+    this._state = PopupDescriptionView.parseProductToState({
       title,
       description,
       price,
@@ -32,7 +32,7 @@ export default class ProductPopupDescriptionView extends AbstractStatefulView {
   }
 
   get template() {
-    return createProductPopupDescriptionTemplate(this._state);
+    return createPopupDescriptionTemplate(this._state);
   }
 
   _restoreHandlers() {
@@ -44,9 +44,9 @@ export default class ProductPopupDescriptionView extends AbstractStatefulView {
     this.element.querySelector(".product-description__button").addEventListener("click", this.#deferButtonClickHandler);
   }
 
-  shakeDeferBtn = () => {
-    const deferBtnElement = this.element.querySelector(".product-description__button");
-    this.shake.call({ element: deferBtnElement });
+  shakeDeferButton = () => {
+    const deferButtonElement = this.element.querySelector(".product-description__button");
+    this.shake.call({ element: deferButtonElement });
   };
 
   #deferButtonClickHandler = (evt) => {
@@ -56,6 +56,6 @@ export default class ProductPopupDescriptionView extends AbstractStatefulView {
 
   static parseProductToState = (product) => ({
     ...product,
-    isProductEditing: false,
+    isEditing: false,
   });
 }

@@ -8,7 +8,9 @@ import CartButtonClearView from "../view/cart-button-clear-view.js";
 import CartListView from "../view/cart-list-view.js";
 import SummaryView from "../view/cart-summary-view.js";
 
-import CartProductPresenter from "./cart-product-presenter.js";
+import { mainElement, popupDeferredElement } from "../main.js";
+
+import DeferredCardPresenter from "./deferred-card-presenter.js";
 
 import UiBlocker from "../framework/ui-blocker/ui-blocker.js";
 
@@ -20,19 +22,17 @@ export default class CartPresenter {
   #heroComponent = null;
   #cartContainerComponent = null;
   #goCatalogueButtonComponent = null;
-  #cartListComponent = null;
+  #listComponent = null;
   #clearButtonComponent = null;
   #summaryComponent = null;
 
   #container = null;
-  #popupDeferredElement = document.querySelector("section.popup-deferred");
-  #mainElement = document.querySelector("main");
 
   #cartModel = null;
   #productsModel = null;
   #filterModel = null;
 
-  #cartProductPresenter = new Map();
+  #deferredCardPresenter = new Map();
 
   #uiBlocker = new UiBlocker(TimeLimit.LOWER_LIMIT, TimeLimit.UPPER_LIMIT);
 
@@ -46,16 +46,16 @@ export default class CartPresenter {
     this.#cartModel.addObserver(this.#modelEventHandler);
   }
 
-  get cartItems() {
-    const allProducts = this.#productsModel.get();
+  get items() {
+    const products = this.#productsModel.get();
 
-    const cartProducts = this.#cartModel.get().products;
+    const deferred = this.#cartModel.get().products;
 
-    const result = Object.keys(cartProducts).map((productId) => {
-      const product = allProducts.find((product) => product.id === productId);
+    const result = Object.keys(deferred).map((productId) => {
+      const product = products.find((product) => product.id === productId);
       return {
         ...product,
-        quantity: cartProducts[productId],
+        quantity: deferred[productId],
       };
     });
 
@@ -66,96 +66,15 @@ export default class CartPresenter {
     return this.#isCartOpen;
   }
 
-  init() {
+  init = () => {
     this.#clearCards();
     this.#renderCart();
-  }
+  };
 
   toggleCart = () => {
     this.#isCartOpen = !this.#isCartOpen;
-    this.#updateUI();
-  }
-
-  #viewActionHandler = async (actionType, updateType, productId) => {
-    this.#uiBlocker.block();
-
-    switch (actionType) {
-      case UserAction.INCREASE_COUNT:
-        if (this.#cartProductPresenter.get(productId)) {
-          this.#cartProductPresenter.get(productId).setCardEditing();
-        }
-
-        try {
-          await this.#cartModel.increase(updateType, productId);
-        } catch {
-          this.#cartProductPresenter.get(productId).setAborting();
-        }
-        break;
-
-      case UserAction.DECREASE_COUNT:
-        if (this.#cartProductPresenter.get(productId)) {
-          this.#cartProductPresenter.get(productId).setCardEditing();
-        }
-        try {
-          await this.#cartModel.decrease(updateType, productId);
-        } catch {
-          this.#cartProductPresenter.get(productId).setAborting();
-        }
-        break;
-
-      case UserAction.REMOVE_FROM_CART:
-        if (this.#cartProductPresenter.get(productId)) {
-          this.#cartProductPresenter.get(productId).setCardEditing();
-        }
-        try {
-          await this.#cartModel.removeFull(updateType, productId);
-        } catch {
-          this.#cartProductPresenter.get(productId).setAborting();
-        }
-        break;
-      case UserAction.CLEAR_CART:
-        this.#clearButtonComponent.updateElement({
-          isClearing: true,
-        });
-        try {
-          await this.#cartModel.clear();
-        } catch (err) {
-          this.#clearButtonComponent.updateElement({
-            isClearing: false,
-          });
-          console.log(err);
-          this.#clearButtonComponent.shake();
-        }
-        break;
-    }
-
-    this.#uiBlocker.unblock();
-  };
-
-  #modelEventHandler = (updateType, data) => {
-    switch (updateType) {
-      case UpdateType.INIT:
-        this.#isLoading = false;
-        this.#clearCards();
-        this.#renderCart();
-        break;
-      case UpdateType.PATCH:
-        const patchedProduct = this.cartItems.find((product) => product.id === data.productId);
-        if (patchedProduct) {
-          const productPresenter = this.#cartProductPresenter.get(patchedProduct.id);
-          if (productPresenter) {
-            productPresenter.init(patchedProduct);
-          }
-        }
-        this.#renderSummary();
-        break;
-      case UpdateType.MINOR:
-      case UpdateType.MAJOR:
-        this.#clearCards();
-        this.#renderCartContainer();
-        this.#renderClearButton(this.#cartContainerComponent.element);
-        break;
-    }
+    popupDeferredElement.style.display = this.#isCartOpen ? "block" : "none";
+    mainElement.style.display = this.#isCartOpen ? "none" : "block";
   };
 
   #renderCart = () => {
@@ -203,16 +122,15 @@ export default class CartPresenter {
   };
 
   #renderCartList = (container) => {
-    if (!this.#cartListComponent) {
-      this.#cartListComponent = new CartListView();
-      render(this.#cartListComponent, container);
+    if (!this.#listComponent) {
+      this.#listComponent = new CartListView();
+      render(this.#listComponent, container);
     }
-    this.#renderProductCards(this.cartItems, this.#cartListComponent.element);
+    this.#renderProductCards(this.items, this.#listComponent.element);
   };
 
-  #renderProductCards = (cartItems, container) => {
-    "CART ITEMS", cartItems;
-    cartItems.forEach((cartItem) => {
+  #renderProductCards = (items, container) => {
+    items.forEach((cartItem) => {
       this.#renderProductCard(cartItem, container);
     });
   };
@@ -221,10 +139,10 @@ export default class CartPresenter {
     if (cartItem.id === undefined) {
       return;
     }
-    const cartProductPresenter = new CartProductPresenter(container, this.#viewActionHandler);
+    const deferredCardPresenter = new DeferredCardPresenter(container, this.#viewActionHandler);
 
-    cartProductPresenter.init(cartItem);
-    this.#cartProductPresenter.set(cartItem.id, cartProductPresenter);
+    deferredCardPresenter.init(cartItem);
+    this.#deferredCardPresenter.set(cartItem.id, deferredCardPresenter);
   };
 
   #renderClearButton = (container) => {
@@ -243,10 +161,6 @@ export default class CartPresenter {
     }
   };
 
-  #clearButtonClickHandler = () => {
-    this.#viewActionHandler(UserAction.CLEAR_CART);
-  };
-
   #renderSummary = (container) => {
     if (!this.#summaryComponent) {
       this.#summaryComponent = new SummaryView(this.#cartModel.getProductCount(), this.#cartModel.getSum());
@@ -261,17 +175,96 @@ export default class CartPresenter {
   };
 
   #clearCards = () => {
-    this.#cartProductPresenter.forEach((presenter) => presenter.destroy());
-    this.#cartProductPresenter.clear();
+    this.#deferredCardPresenter.forEach((presenter) => presenter.destroy());
+    this.#deferredCardPresenter.clear();
   };
 
-  #updateUI() {
-    if (this.#isCartOpen) {
-      this.#popupDeferredElement.style.display = "block";
-      this.#mainElement.style.display = "none";
-    } else {
-      this.#popupDeferredElement.style.display = "none";
-      this.#mainElement.style.display = "block";
+  #viewActionHandler = async (actionType, updateType, productId) => {
+    this.#uiBlocker.block();
+
+    switch (actionType) {
+      case UserAction.INCREASE_COUNT:
+        if (this.#deferredCardPresenter.get(productId)) {
+          this.#deferredCardPresenter.get(productId).setCardEditing();
+        }
+
+        try {
+          await this.#cartModel.increase(updateType, productId);
+        } catch {
+          this.#deferredCardPresenter.get(productId).setAborting();
+        }
+        break;
+
+      case UserAction.DECREASE_COUNT:
+        if (this.#deferredCardPresenter.get(productId)) {
+          this.#deferredCardPresenter.get(productId).setCardEditing();
+        }
+        try {
+          await this.#cartModel.decrease(updateType, productId);
+        } catch {
+          if (this.#deferredCardPresenter.get(productId)) {
+            this.#deferredCardPresenter.get(productId).setAborting();
+          }
+        }
+        break;
+
+      case UserAction.REMOVE_FROM_CART:
+        if (this.#deferredCardPresenter.get(productId)) {
+          this.#deferredCardPresenter.get(productId).setCardEditing();
+        }
+        try {
+          await this.#cartModel.removeFull(updateType, productId);
+        } catch {
+          if (this.#deferredCardPresenter.get(productId)) {
+            this.#deferredCardPresenter.get(productId).setAborting();
+          }
+        }
+        break;
+      case UserAction.CLEAR_CART:
+        this.#clearButtonComponent.updateElement({
+          isClearing: true,
+        });
+        try {
+          await this.#cartModel.clear();
+        } catch {
+          this.#clearButtonComponent.updateElement({
+            isClearing: false,
+          });
+          this.#clearButtonComponent.shake();
+        }
+        break;
     }
-  }
+
+    this.#uiBlocker.unblock();
+  };
+
+  #modelEventHandler = (updateType, data) => {
+    switch (updateType) {
+      case UpdateType.INIT:
+        this.#isLoading = false;
+        this.#clearCards();
+        this.#renderCart();
+        break;
+      case UpdateType.PATCH:
+        const patchedProduct = this.items.find((product) => product.id === data.productId);
+        if (patchedProduct) {
+          const productPresenter = this.#deferredCardPresenter.get(patchedProduct.id);
+          if (productPresenter) {
+            productPresenter.init(patchedProduct);
+          }
+        }
+        this.#renderSummary();
+        break;
+      case UpdateType.MINOR:
+      case UpdateType.MAJOR:
+        this.#clearCards();
+        this.#renderCartContainer();
+        this.#renderClearButton(this.#cartContainerComponent.element);
+        break;
+    }
+  };
+
+  #clearButtonClickHandler = () => {
+    this.#viewActionHandler(UserAction.CLEAR_CART);
+  };
 }

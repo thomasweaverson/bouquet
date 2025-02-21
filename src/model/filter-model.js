@@ -13,7 +13,6 @@ export default class FilterModel extends Observable {
     return this.#reasonFilter;
   }
 
-  // Установка фильтра цветов
   setColorFilter = (updateType, newColors) => {
     if (newColors.length === 0) {
       this.#colorFilter = [ColorFilter.ALL];
@@ -26,7 +25,6 @@ export default class FilterModel extends Observable {
     });
   };
 
-  // Установка фильтра повода
   setReasonFilter = (updateType, newReason) => {
     this.#reasonFilter = newReason;
 
@@ -36,7 +34,6 @@ export default class FilterModel extends Observable {
     });
   };
 
-  // Сброс всех фильтров
   resetFilters = (updateType) => {
     this.#colorFilter = [ColorFilter.ALL];
     this.#reasonFilter = ReasonFilter.ALL;

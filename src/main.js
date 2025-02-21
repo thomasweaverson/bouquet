@@ -14,15 +14,15 @@ import CartPresenter from "./presenter/cart-presenter";
 
 import MainPresenter from "./presenter/main-presenter";
 
-// Ваши импорты...
-
 const AUTHORIZATION = "Basic thom:RealyGutPa$$w0rd";
 const END_POINT = "https://grading.objects.htmlacademy.pro/flowers-shop/";
 
 const appWrapperElement = document.querySelector("body div.wrapper");
 const siteHeaderCountElement = appWrapperElement.querySelector(".header__container");
+
+export const popupDeferredElement = document.querySelector("section.popup-deferred");
 const cartElement = appWrapperElement.querySelector(".popup-deferred__wrapper");
-const mainElement = document.querySelector("main");
+export const mainElement = document.querySelector("main");
 
 const productsModel = new ProductsModel(new ProductsApiService(END_POINT, AUTHORIZATION));
 const cartModel = new CartModel(new ProductsApiService(END_POINT, AUTHORIZATION), productsModel);

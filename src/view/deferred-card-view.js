@@ -1,9 +1,9 @@
 import AbstractStatefulView from "../framework/view/abstract-stateful-view.js";
 import { formatPrice } from "../utils/common.js";
 
-const createCartCardView = ({ title, description, count, price, previewImage, isProductEditing }) => `
+const createDeferredCardView = ({ title, description, count, price, previewImage, isEditing }) => `
               <li class="popup-deferred__item">
-                <div class="deferred-card ${isProductEditing ? "is-loading" : ""}">
+                <div class="deferred-card ${isEditing ? "is-loading" : ""}">
                   <div class="deferred-card__img">
                     <picture>
                       <img src="${previewImage}" width="344" height="408" alt="букет">
@@ -15,14 +15,14 @@ const createCartCardView = ({ title, description, count, price, previewImage, is
                   </div>
                   <div class="deferred-card__count">
                     <button class="btn-calculate btn-calculate--decrease" type="button" ${
-                      isProductEditing ? "disabled" : ""
+                      isEditing ? "disabled" : ""
                     }>
                       <svg width="30" height="27" aria-hidden="true">
                         <use xlink:href="#icon-minus"></use>
                       </svg>
                     </button><span>${count}</span>
                     <button class="btn-calculate btn-calculate--increase" type="button" ${
-                      isProductEditing ? "disabled" : ""
+                      isEditing ? "disabled" : ""
                     }>
                       <svg width="30" height="28" aria-hidden="true">
                         <use xlink:href="#icon-cross"></use>
@@ -45,14 +45,14 @@ const createCartCardView = ({ title, description, count, price, previewImage, is
               </li>
 `;
 
-export default class CartCardView extends AbstractStatefulView {
+export default class DeferredCardView extends AbstractStatefulView {
   constructor(product, count) {
     super();
-    this._state = CartCardView.parseProductToState(product, count);
+    this._state = DeferredCardView.parseProductToState(product, count);
   }
 
   get template() {
-    return createCartCardView(this._state);
+    return createDeferredCardView(this._state);
   }
 
   _restoreHandlers() {
@@ -94,6 +94,6 @@ export default class CartCardView extends AbstractStatefulView {
   static parseProductToState = (product, count) => ({
     ...product,
     count,
-    isProductEditing: false,
+    isEditing: false,
   });
 }

@@ -19,7 +19,7 @@ export default class HeaderPresenter {
     this.#cartModel.addObserver(this.#modelEventHandler);
   }
 
-  init() {
+  init = () => {
     this.#productCount = this.#cartModel.getProductCount();
     this.#sum = this.#cartModel.getSum();
 

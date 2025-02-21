@@ -1,14 +1,14 @@
 import { UpdateType, UserAction } from "../const";
 import { render, replace, remove } from "../framework/render";
-import CatalogueProductCardView from "../view/catalogue-product-card-view";
+import CatalogueCardView from "../view/catalogue-card-view";
 
-export default class ProductCardPresenter {
+export default class CatalogueCardPresenter {
   #container = null;
   #changeData = null;
   #cardClickHandler = null;
   #cartModel = null;
 
-  #productCardComponent = null;
+  #cardComponent = null;
 
   #product = null;
 
@@ -23,38 +23,38 @@ export default class ProductCardPresenter {
     this.#product = product;
 
     const isProductInCart = this.#cartModel.isProductInCart(product.id);
-    const prevProductCardComponent = this.#productCardComponent;
+    const prevCardComponent = this.#cardComponent;
 
-    this.#productCardComponent = new CatalogueProductCardView(product, isProductInCart);
+    this.#cardComponent = new CatalogueCardView(product, isProductInCart);
 
-    this.#productCardComponent.setProductCardClickHandler(this.#cardClickHandler);
-    this.#productCardComponent.setFavoriteButtonClickHandler(this.#favoriteButtonClickHandler);
+    this.#cardComponent.setCardClickHandler(this.#cardClickHandler);
+    this.#cardComponent.setFavoriteButtonClickHandler(this.#favoriteButtonClickHandler);
 
-    if (prevProductCardComponent === null) {
-      render(this.#productCardComponent, this.#container);
+    if (prevCardComponent === null) {
+      render(this.#cardComponent, this.#container);
       return;
     }
 
-    replace(this.#productCardComponent, prevProductCardComponent);
+    replace(this.#cardComponent, prevCardComponent);
 
-    remove(prevProductCardComponent);
+    remove(prevCardComponent);
   };
 
   destroy = () => {
-    remove(this.#productCardComponent);
+    remove(this.#cardComponent);
   };
 
   setProductEditing = () => {
-    this.#productCardComponent.updateElement({
-      isProductEditing: true,
+    this.#cardComponent.updateElement({
+      isEditing: true,
     });
   };
 
   setAborting = () => {
-    this.#productCardComponent.updateElement({
-      isProductEditing: false,
+    this.#cardComponent.updateElement({
+      isEditing: false,
     });
-    this.#productCardComponent.shake();
+    this.#cardComponent.shake();
   };
 
   #favoriteButtonClickHandler = () => {
