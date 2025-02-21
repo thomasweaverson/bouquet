@@ -6,7 +6,7 @@ import UiBlocker from "../framework/ui-blocker/ui-blocker.js";
 
 import { render, replace, remove, RenderPosition } from "../framework/render.js";
 
-import { sortProductsByPriceIncrease, sortProductsByPriceDecrease } from "../utils/common";
+import { sortByPriceIncrease, sortByPriceDecrease } from "../utils/common";
 
 import { PRODUCT_COUNT_PER_STEP, SortType, UserAction, UpdateType, TimeLimit } from "../const.js";
 import CatalogueContainerView from "../view/catalogue-container-view.js";
@@ -63,9 +63,9 @@ export default class CataloguePresenter {
 
     switch (this.#currentSortType) {
       case SortType.PRICE_INCREASE:
-        return sortProductsByPriceIncrease(filteredProducts);
+        return sortByPriceIncrease(filteredProducts);
       case SortType.PRICE_DECREASE:
-        return sortProductsByPriceDecrease(filteredProducts);
+        return sortByPriceDecrease(filteredProducts);
     }
 
     return sortProductsByPriceIncrease(filteredProducts);

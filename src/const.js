@@ -15,6 +15,17 @@ const ReasonLabel = {
   forlove: "любимой",
 };
 
+const ReasonFilter = {
+  ALL: "for-all",
+  BIRTHDAY: "for-birthday",
+  BRIDE: "for-bride",
+  MOTHER: "for-mother",
+  COLLEAGUE: "for-colleague",
+  DARLING: "for-darling",
+};
+
+
+//=================
 const ColorFilters = [
   { name: "Все цвета", value: "color-all" },
   { name: "Красный", value: "color-red" },
@@ -33,14 +44,10 @@ const ColorFilter = {
   PINK: "color-pink",
 };
 
-const ReasonFilter = {
-  ALL: "for-all",
-  BIRTHDAY: "for-birthday",
-  BRIDE: "for-bride",
-  MOTHER: "for-mother",
-  COLLEAGUE: "for-colleague",
-  DARLING: "for-darling",
-};
+
+
+
+//=====================
 
 const SortType = {
   DEFAULT: "price-increase",

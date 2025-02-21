@@ -1,5 +1,4 @@
-const truncateString = (str) =>
-  str.length > 140 ? str.slice(0, 139) + "…" : str;
+const truncateString = (str) => (str.length > 140 ? str.slice(0, 139) + "…" : str);
 
 const formatPrice = (price) => {
   const priceStr = String(price);
@@ -14,7 +13,7 @@ const formatPrice = (price) => {
   return `${thousands}\u00A0${remainder}`;
 };
 
-const sortProductsByPriceIncrease = (products) => products.sort((a, b) => a.price - b.price);
-const sortProductsByPriceDecrease = (products) => products.sort((a, b) => b.price - a.price);
+const sortByPriceIncrease = (products) => products.sort((a, b) => a.price - b.price);
+const sortByPriceDecrease = (products) => products.sort((a, b) => b.price - a.price);
 
-export { truncateString, formatPrice, sortProductsByPriceIncrease, sortProductsByPriceDecrease };
+export { truncateString, formatPrice, sortByPriceIncrease, sortByPriceDecrease };
