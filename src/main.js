@@ -1,53 +1,78 @@
-import "./vendor";
-import { iosVhFix } from "./utils/ios-vh-fix";
-import { initModals } from "./modals/init-modals";
+import UiBlocker from './framework/ui-blocker/ui-blocker';
+import './vendor';
 
-import ProductsModel from "./model/products-model";
-import CartModel from "./model/cart-model";
-import FilterModel from "./model/filter-model";
+import { initModals } from './modals/init-modals';
+import { AUTHORIZATION, BASE_URL } from './utils/api';
+import { TimeLimit } from './utils/const';
+import { iosVhFix } from './utils/ios-vh-fix';
 
-import ProductsApiService from "./api-services/products-api-service";
+import ProductsApiService from './api-services/products-api-service';
+import CartModel from './model/cart-model';
+import FilterModel from './model/filter-model';
+import ProductsModel from './model/products-model';
 
-import HeaderPresenter from "./presenter/header-presenter";
-import FilterPresenter from "./presenter/filter-presenter";
-import CartPresenter from "./presenter/cart-presenter";
+import CartPresenter from './presenter/cart-presenter';
+import FilterPresenter from './presenter/filter-presenter';
+import HeaderPresenter from './presenter/header-presenter';
+import MainPresenter from './presenter/main-presenter';
 
-import MainPresenter from "./presenter/main-presenter";
-
-const AUTHORIZATION = "Basic thom:RealyGutPa$$w0rd";
-const END_POINT = "https://grading.objects.htmlacademy.pro/flowers-shop/";
-
-const appWrapperElement = document.querySelector("body div.wrapper");
-const siteHeaderCountElement = appWrapperElement.querySelector(".header__container");
-
-const popupDeferredElement = document.querySelector("section.popup-deferred");
-const cartElement = appWrapperElement.querySelector(".popup-deferred__wrapper");
-const mainElement = document.querySelector("main");
-
-const productsModel = new ProductsModel(new ProductsApiService(END_POINT, AUTHORIZATION));
-const cartModel = new CartModel(new ProductsApiService(END_POINT, AUTHORIZATION), productsModel);
-const filterModel = new FilterModel();
-
-const filterPresenter = new FilterPresenter(mainElement, filterModel);
-
-const cartPresenter = new CartPresenter(cartElement, cartModel, productsModel, filterModel);
-
-const headerPresenter = new HeaderPresenter(siteHeaderCountElement, cartModel, cartPresenter, filterModel);
-
-const mainPresenter = new MainPresenter(mainElement, productsModel, filterModel, cartModel);
-
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener('DOMContentLoaded', () => {
   iosVhFix();
 
-  window.addEventListener("load", () => {
+  window.addEventListener('load', () => {
     initModals();
   });
+
+  const appWrapperContainer = document.querySelector('body div.wrapper');
+  const siteHeaderCountContainer = appWrapperContainer?.querySelector('.header__container');
+  const cartContainer = appWrapperContainer?.querySelector('.popup-deferred');
+  const mainContainer = document.querySelector('main');
+  const modalContainer = document.querySelector('[data-modal="popup-product-details"]');
+
+  const productsApiService = new ProductsApiService(BASE_URL, AUTHORIZATION);
+  const productsModel = new ProductsModel(productsApiService);
+  const cartModel = new CartModel(productsApiService, productsModel);
+  const filterModel = new FilterModel();
+  const uiBlocker = new UiBlocker(TimeLimit.LOWER, TimeLimit.UPPER);
+
+  new FilterPresenter({
+    container: mainContainer,
+    filterModel,
+    productsModel
+  });
+
+  const cartPresenter = new CartPresenter({
+    container: cartContainer,
+    mainContainer,
+    cartModel,
+    productsModel,
+    filterModel,
+    uiBlocker
+  });
+
+  const headerPresenter = new HeaderPresenter({
+    container: siteHeaderCountContainer,
+    cartModel,
+    cartPresenter
+  });
+
+  const mainPresenter = new MainPresenter({
+    container: mainContainer,
+    modalContainer,
+    productsModel,
+    filterModel,
+    cartModel,
+    uiBlocker
+  });
+
+  const initApp = () => {
+    cartPresenter.init();
+    headerPresenter.init();
+    mainPresenter.init();
+
+    productsModel.init();
+    cartModel.init();
+  };
+
+  initApp();
 });
-
-cartPresenter.init();
-headerPresenter.init();
-filterPresenter.init();
-mainPresenter.init();
-
-productsModel.init();
-cartModel.init();

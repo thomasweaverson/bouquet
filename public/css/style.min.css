@@ -20,14 +20,6 @@
   }
 }
 
-.no-relevant__title {
-  position: relative;
-  bottom: 120px;
-  letter-spacing: .1em;
-  font-weight: 400;
-  font-size: 40px;
-}
-
 .product-popup-error-loading__text  {
   margin: 0;
   letter-spacing: .1em;

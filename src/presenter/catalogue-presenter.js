@@ -1,28 +1,26 @@
-import CatalogueSortHeaderView from "../view/catalogue-sort-header-view.js";
+import { PRODUCT_COUNT_PER_STEP, SortType, UpdateType, UserAction } from '../utils/const.js';
+import { filterByColor, filterByReason } from '../utils/filter.js';
 
-import CatalogueCardPresenter from "./catalogue-card-presenter.js";
+import { remove, render, RenderPosition, replace } from '../framework/render.js';
 
-import UiBlocker from "../framework/ui-blocker/ui-blocker.js";
+import { sortByPriceDecrease, sortByPriceIncrease } from '../utils/sort.js';
 
-import { render, replace, remove, RenderPosition } from "../framework/render.js";
+import CatalogueCardPresenter from './catalogue-card-presenter.js';
 
-import { sortByPriceIncrease, sortByPriceDecrease } from "../utils/common";
-
-import { PRODUCT_COUNT_PER_STEP, SortType, UserAction, UpdateType, TimeLimit } from "../const.js";
-import CatalogueContainerView from "../view/catalogue-container-view.js";
-import CatalogueListView from "../view/catalogue-list-view.js";
-import CatalogueButtonsWrapperView from "../view/catalogue-buttons-wrapper-view.js";
-import CatalogueButtonShowMoreView from "../view/catalogue-button-showmore-view.js";
-import CatalogueButtonGoTopView from "../view/catalogue-button-go-top-view.js";
-import { filterByReason, filterByColor } from "../utils/filter.js";
-import ProductsListNoRelevantView from "../view/products-list-no-relevant-view.js";
+import CatalogueButtonGoTopView from '../view/catalogue-button-go-top-view.js';
+import CatalogueButtonShowMoreView from '../view/catalogue-button-show-more-view.js';
+import CatalogueButtonsWrapperView from '../view/catalogue-buttons-wrapper-view.js';
+import CatalogueContainerView from '../view/catalogue-container-view.js';
+import CatalogueListView from '../view/catalogue-list-view.js';
+import CatalogueSortHeaderView from '../view/catalogue-sort-header-view.js';
+import ProductsListNoRelevantView from '../view/products-list-no-relevant-view.js';
 
 export default class CataloguePresenter {
   #sortComponent = null;
   #containerComponent = new CatalogueContainerView();
   #listComponent = new CatalogueListView();
   #buttonsWrapperComponent = new CatalogueButtonsWrapperView();
-  #buttonShowmoreComponent = new CatalogueButtonShowMoreView();
+  #buttonShowMoreComponent = new CatalogueButtonShowMoreView();
   #buttonGoTopComponent = new CatalogueButtonGoTopView();
 
   #noRelevantComponent = new ProductsListNoRelevantView();
@@ -39,14 +37,15 @@ export default class CataloguePresenter {
 
   #renderedProductCount = PRODUCT_COUNT_PER_STEP;
 
-  #uiBlocker = new UiBlocker(TimeLimit.LOWER_LIMIT, TimeLimit.UPPER_LIMIT);
+  #uiBlocker = null;
 
-  constructor(container, productsModel, filterModel, cartModel, cardClickHandler) {
+  constructor({container, productsModel, filterModel, cartModel, cardClickHandler, uiBlocker}) {
     this.#container = container;
     this.#productsModel = productsModel;
     this.#filterModel = filterModel;
     this.#cartModel = cartModel;
     this.#cardClickHandler = cardClickHandler;
+    this.#uiBlocker = uiBlocker;
 
     this.#productsModel.addObserver(this.#modelEventHandler);
     this.#filterModel.addObserver(this.#modelEventHandler);
@@ -57,9 +56,9 @@ export default class CataloguePresenter {
     const currentColorFilter = this.#filterModel.colorFilter;
     const currentReasonFilter = this.#filterModel.reasonFilter;
 
-    const products = this.#productsModel.get();
+    const products = this.#productsModel.products;
 
-    const filteredProducts = filterByColor(filterByReason[currentReasonFilter](products), currentColorFilter);
+    const filteredProducts = filterByColor(filterByReason(products, currentReasonFilter), currentColorFilter);
 
     switch (this.#currentSortType) {
       case SortType.PRICE_INCREASE:
@@ -68,30 +67,36 @@ export default class CataloguePresenter {
         return sortByPriceDecrease(filteredProducts);
     }
 
-    return sortProductsByPriceIncrease(filteredProducts);
+    return sortByPriceIncrease(filteredProducts);
   }
 
   init = () => {
     this.#renderBoard();
   };
 
-  #renderButtonShowMore = (container) => {
-    render(this.#buttonShowmoreComponent, container, RenderPosition.AFTERBEGIN);
-    this.#buttonShowmoreComponent.setButtonShowMoreClickHandler(this.#showMoreButtonClickHandler);
+  #renderButtonShowMore = () => {
+    render(this.#buttonShowMoreComponent, this.#buttonsWrapperComponent.element, RenderPosition.AFTERBEGIN);
+    this.#buttonShowMoreComponent.setButtonShowMoreClickHandler(this.#showMoreButtonClickHandler);
   };
 
-  #renderButtonGoTop = (container) => {
-    render(this.#buttonGoTopComponent, container, RenderPosition.BEFOREEND);
+  #renderButtonGoTop = () => {
+    const prevButtonGoTopComponent = this.#buttonGoTopComponent;
+    if (prevButtonGoTopComponent !== null) {
+      remove(prevButtonGoTopComponent);
+    }
+    render(this.#buttonGoTopComponent, this.#buttonsWrapperComponent.element, RenderPosition.BEFOREEND);
     this.#buttonGoTopComponent.setButtonGoTopClickHandler(this.#goTopButtonClickHandler);
   };
 
-  #renderSort = (container) => {
+  #renderSort = () => {
     const prevSortComponent = this.#sortComponent;
-    this.#sortComponent = new CatalogueSortHeaderView(this.#currentSortType);
+    this.#sortComponent = new CatalogueSortHeaderView({
+      currentSortType: this.#currentSortType,
+    });
     this.#sortComponent.setSortTypeChangeHandler(this.#sortTypeChangeHandler);
 
     if (prevSortComponent === null) {
-      render(this.#sortComponent, container, RenderPosition.AFTERBEGIN);
+      render(this.#sortComponent, this.#containerComponent.element, RenderPosition.AFTERBEGIN);
       return;
     }
 
@@ -99,21 +104,25 @@ export default class CataloguePresenter {
     remove(prevSortComponent);
   };
 
-  #renderProductsListContainer = (container) => {
-    render(this.#listComponent, container);
+  #renderProductsListContainer = () => {
+    remove(this.#listComponent);
+    render(this.#listComponent, this.#containerComponent.element);
   };
 
   #renderProductsList = (products) => {
     if (products.length === 0) {
-      render(this.#noRelevantComponent, this.#containerComponent.element);
+      remove(this.#listComponent);
+      render(this.#noRelevantComponent, this.#containerComponent.element, RenderPosition.BEFOREEND);
+      this.#renderButtonsWrapper();
       return;
+    } else {
+      remove(this.#noRelevantComponent);
     }
-    remove(this.#noRelevantComponent);
 
     this.#renderCards(products, this.#listComponent.element);
 
     if (this.products.length > PRODUCT_COUNT_PER_STEP) {
-      this.#renderButtonShowMore(this.#buttonsWrapperComponent.element);
+      this.#renderButtonShowMore();
     }
   };
 
@@ -127,32 +136,38 @@ export default class CataloguePresenter {
     this.#cardPresenter.forEach((presenter) => presenter.destroy());
     this.#cardPresenter.clear();
     this.#renderedProductCount = PRODUCT_COUNT_PER_STEP;
-    remove(this.#buttonShowmoreComponent);
+    remove(this.#buttonShowMoreComponent);
   };
 
   #renderCard = (product, container) => {
-    const cardPresenter = new CatalogueCardPresenter(
+    if (this.#cardPresenter.has(product.id)) {
+      this.#cardPresenter.get(product.id).destroy();
+    }
+
+    const cardPresenter = new CatalogueCardPresenter({
       container,
-      this.#viewActionHandler,
-      this.#cardClickHandler,
-      this.#cartModel,
-    );
+      changeData: this.#viewActionHandler,
+      cardClickHandler: this.#cardClickHandler,
+      cartModel: this.#cartModel,
+    });
 
     cardPresenter.init(product);
     this.#cardPresenter.set(product.id, cardPresenter);
   };
 
-  #renderButtonsWrapper = (container) => {
-    render(this.#buttonsWrapperComponent, container);
-    this.#renderButtonGoTop(this.#buttonsWrapperComponent.element);
+  #renderButtonsWrapper = () => {
+    remove(this.#buttonsWrapperComponent);
+    render(this.#buttonsWrapperComponent, this.#containerComponent.element, RenderPosition.BEFOREEND);
+
+    this.#renderButtonGoTop();
   };
 
   #renderBoard = () => {
     const products = this.products.slice(0, Math.min(this.products.length, PRODUCT_COUNT_PER_STEP));
 
-    this.#renderSort(this.#containerComponent.element);
-    this.#renderProductsListContainer(this.#containerComponent.element);
-    this.#renderButtonsWrapper(this.#containerComponent.element);
+    this.#renderSort();
+    this.#renderProductsListContainer();
+    this.#renderButtonsWrapper();
 
     this.#renderProductsList(products);
 
@@ -163,7 +178,7 @@ export default class CataloguePresenter {
     this.#cardPresenter.forEach((presenter) => presenter.destroy());
     this.#cardPresenter.clear();
 
-    remove(this.#buttonShowmoreComponent);
+    remove(this.#buttonShowMoreComponent);
 
     if (resetRenderedProductCount) {
       this.#renderedProductCount = PRODUCT_COUNT_PER_STEP;
@@ -186,14 +201,14 @@ export default class CataloguePresenter {
     this.#renderedProductCount += PRODUCT_COUNT_PER_STEP;
 
     if (this.#renderedProductCount >= productsCount) {
-      remove(this.#buttonShowmoreComponent);
+      remove(this.#buttonShowMoreComponent);
     }
   };
 
   #goTopButtonClickHandler = () => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth",
+      behavior: 'smooth',
     });
   };
 
@@ -234,10 +249,9 @@ export default class CataloguePresenter {
         }
         break;
       case UpdateType.MAJOR:
-        const resetSortType = data ? data.isFilterChanged : true;
         this.#clearBoard({
           resetRenderedProductCount: true,
-          resetSortType,
+          resetSortType: data ? data.isFilterChanged : true,
         });
         this.#renderBoard();
         break;
@@ -254,7 +268,7 @@ export default class CataloguePresenter {
     const products = this.products.slice(0, Math.min(this.products.length, PRODUCT_COUNT_PER_STEP));
 
     this.#clearProductsList();
-    this.#renderSort(this.#containerComponent.element);
+    this.#renderSort();
     this.#renderProductsList(products);
   };
 }

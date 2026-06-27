@@ -1,9 +1,9 @@
-import Observable from "../framework/observable";
-import {Color, Reason } from "../const";
+import Observable from '../framework/observable';
+import { ColorFilter, ReasonFilter, UpdateType } from '../utils/const.js';
 
 export default class FilterModel extends Observable {
-  #colorFilter = [Color.FILTER.ALL];
-  #reasonFilter = Reason.FILTER.ALL;
+  #colorFilter = [ColorFilter.ALL];
+  #reasonFilter = ReasonFilter.ALL;
 
   get colorFilter() {
     return this.#colorFilter;
@@ -15,10 +15,11 @@ export default class FilterModel extends Observable {
 
   setColorFilter = (updateType, newColors) => {
     if (newColors.length === 0) {
-      this.#colorFilter = [Color.FILTER.ALL];
+      this.#colorFilter = [ColorFilter.ALL];
     } else {
       this.#colorFilter = newColors;
     }
+
     this._notify(updateType, {
       colorFilter: this.#colorFilter,
       isFilterChanged: true,
@@ -34,12 +35,10 @@ export default class FilterModel extends Observable {
     });
   };
 
-  resetFilters = (updateType) => {
-    this.#colorFilter = [Color.FILTER.ALL];
-    this.#reasonFilter = Reason.FILTER.ALL;
-    this._notify(updateType, {
-      colorFilter: this.#colorFilter,
-      reasonFilter: this.#reasonFilter,
-    });
+  resetFilters = () => {
+    this.#colorFilter = [ColorFilter.ALL];
+    this.#reasonFilter = ReasonFilter.ALL;
+
+    this._notify(UpdateType.MAJOR);
   };
 }

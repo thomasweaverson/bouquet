@@ -1,31 +1,29 @@
-import { remove, render, replace, RenderPosition } from "../framework/render.js";
-import { UserAction, UpdateType, TimeLimit } from "../const.js";
+import { render, RenderPosition } from '../framework/render.js';
+import { UpdateType, UserAction } from '../utils/const.js';
 
-import CartHeroView from "../view/cart-hero-view.js";
-import CartContainerView from "../view/cart-container-view.js";
-import CartButtonGoCatalogueView from "../view/cart-button-go-catalogue-view.js";
-import CartButtonClearView from "../view/cart-button-clear-view.js";
-import CartListView from "../view/cart-list-view.js";
-import SummaryView from "../view/cart-summary-view.js";
+import CartButtonClearView from '../view/cart-button-clear-view.js';
+import CartButtonGoCatalogueView from '../view/cart-button-go-catalogue-view.js';
+import CartContainerView from '../view/cart-container-view.js';
+import CartHeroView from '../view/cart-hero-view.js';
+import CartListView from '../view/cart-list-view.js';
+import CartSummaryView from '../view/cart-summary-view.js';
 
-import DeferredCardPresenter from "./deferred-card-presenter.js";
-
-import UiBlocker from "../framework/ui-blocker/ui-blocker.js";
-
-const popupDeferredElement = document.querySelector("section.popup-deferred");
-const mainElement = document.querySelector("main");
+import DeferredCardPresenter from './deferred-card-presenter.js';
 
 export default class CartPresenter {
   #isCartOpen = false;
   #isLoading = true;
+
   #heroComponent = null;
-  #cartContainerComponent = null;
-  #goCatalogueButtonComponent = null;
-  #listComponent = null;
-  #clearButtonComponent = null;
+  #cartContainerComponent = new CartContainerView();
+  #goCatalogueButtonComponent = new CartButtonGoCatalogueView();
+  #listComponent = new CartListView();
+  #clearButtonComponent = new CartButtonClearView();
   #summaryComponent = null;
 
-  #container = null;
+  #cartContainer = null;
+  #wrapper = null;
+  #mainContainer = null;
 
   #cartModel = null;
   #productsModel = null;
@@ -33,32 +31,31 @@ export default class CartPresenter {
 
   #deferredCardPresenter = new Map();
 
-  #uiBlocker = new UiBlocker(TimeLimit.LOWER_LIMIT, TimeLimit.UPPER_LIMIT);
+  #uiBlocker = null;
 
-  constructor(container, cartModel, productsModel, filterModel) {
-    this.#container = container;
+  constructor({container, mainContainer, cartModel, productsModel, filterModel, uiBlocker}) {
+    this.#cartContainer = container;
+    this.#wrapper = container.querySelector('.popup-deferred__wrapper');
+    this.#mainContainer = mainContainer;
     this.#cartModel = cartModel;
     this.#productsModel = productsModel;
     this.#filterModel = filterModel;
+    this.#uiBlocker = uiBlocker;
+
+    this.#goCatalogueButtonComponent.setCartButtonGoCatalogueClickHandler(
+      () => {
+        this.#filterModel.resetFilters();
+        this.toggleCart();
+      });
+    this.#clearButtonComponent.setCartButtonClearClickHandler(this.#clearButtonClickHandler);
+
+    render(this.#cartContainerComponent, this.#wrapper);
+    render(this.#listComponent, this.#cartContainerComponent.element);
+    render(this.#goCatalogueButtonComponent, this.#cartContainerComponent.element, RenderPosition.AFTERBEGIN);
+    render(this.#clearButtonComponent, this.#cartContainerComponent.element);
 
     this.#productsModel.addObserver(this.#modelEventHandler);
     this.#cartModel.addObserver(this.#modelEventHandler);
-  }
-
-  get items() {
-    const products = this.#productsModel.get();
-
-    const deferred = this.#cartModel.get().products;
-
-    const result = Object.keys(deferred).map((productId) => {
-      const product = products.find((product) => product.id === productId);
-      return {
-        ...product,
-        quantity: deferred[productId],
-      };
-    });
-
-    return result;
   }
 
   get isCartOpen() {
@@ -72,86 +69,83 @@ export default class CartPresenter {
 
   toggleCart = () => {
     this.#isCartOpen = !this.#isCartOpen;
-    popupDeferredElement.style.display = this.#isCartOpen ? "block" : "none";
-    mainElement.style.display = this.#isCartOpen ? "none" : "block";
+    this.#cartContainer.style.display = this.#isCartOpen ? 'block' : 'none';
+    this.#mainContainer.style.display = this.#isCartOpen ? 'none' : 'block';
+  };
+
+  #getDeferredProducts = () => {
+    const products = this.#productsModel.products;
+
+    const deferred = this.#cartModel.cart.products;
+
+    const result = Object.keys(deferred).map((productId) => {
+      const product = products.find((bouquet) => bouquet.id === productId);
+      return {
+        ...product,
+        quantity: deferred[productId],
+      };
+    });
+
+    return result;
   };
 
   #renderCart = () => {
     this.#renderHero();
-    this.#renderCartContainer();
+    this.#renderCartMain();
   };
 
   #renderHero = () => {
-    const isCartEmpty = this.#cartModel.getProductCount() === 0;
+    const isCartEmpty = this.#cartModel.productCount === 0;
 
-    const prevHeroComponent = this.#heroComponent;
-
-    this.#heroComponent = new CartHeroView(isCartEmpty, this.#isLoading);
-    this.#heroComponent.setCloseButtonClickHandler(this.toggleCart);
-
-    if (prevHeroComponent === null) {
-      render(this.#heroComponent, this.#container, RenderPosition.AFTERBEGIN);
+    if (this.#heroComponent === null) {
+      this.#heroComponent = new CartHeroView({
+        isCartEmpty,
+        isCartLoading: this.#isLoading
+      });
+      this.#heroComponent.setCloseButtonClickHandler(this.toggleCart);
+      render(this.#heroComponent, this.#wrapper, RenderPosition.AFTERBEGIN);
       return;
     }
 
-    replace(this.#heroComponent, prevHeroComponent);
-    remove(prevHeroComponent);
-  };
-
-  #renderCartContainer = () => {
-    if (!this.#cartContainerComponent) {
-      this.#cartContainerComponent = new CartContainerView();
-      render(this.#cartContainerComponent, this.#container);
-    }
-    this.#renderGoCatalogueButton(this.#cartContainerComponent.element);
-    this.#renderCartList(this.#cartContainerComponent.element);
-    this.#renderClearButton(this.#cartContainerComponent.element);
-    this.#renderSummary(this.#cartContainerComponent.element);
-  };
-
-  #renderGoCatalogueButton = (container) => {
-    if (!this.#goCatalogueButtonComponent) {
-      this.#goCatalogueButtonComponent = new CartButtonGoCatalogueView();
-      render(this.#goCatalogueButtonComponent, container);
-      this.#goCatalogueButtonComponent.setCartButtonGoCatalogueClickHandler(() => {
-        this.#filterModel.resetFilters(UpdateType.MAJOR);
-        this.toggleCart();
-      });
-    }
-  };
-
-  #renderCartList = (container) => {
-    if (!this.#listComponent) {
-      this.#listComponent = new CartListView();
-      render(this.#listComponent, container);
-    }
-    this.#renderProductCards(this.items, this.#listComponent.element);
-  };
-
-  #renderProductCards = (items, container) => {
-    items.forEach((cartItem) => {
-      this.#renderProductCard(cartItem, container);
+    this.#heroComponent.updateElement({
+      isCartEmpty,
+      isCartLoading: this.#isLoading
     });
   };
 
-  #renderProductCard = (cartItem, container) => {
+  #renderCartMain = () => {
+    this.#renderProductCards();
+    this.#renderClearButton();
+    this.#renderSummary();
+  };
+
+  #renderProductCards = () => {
+    const items = this.#getDeferredProducts();
+    items.forEach((cartItem) => {
+      this.#renderProductCard(cartItem);
+    });
+  };
+
+  #renderProductCard = (cartItem) => {
     if (cartItem.id === undefined) {
       return;
     }
-    const deferredCardPresenter = new DeferredCardPresenter(container, this.#viewActionHandler);
 
-    deferredCardPresenter.init(cartItem);
+    if (this.#deferredCardPresenter.has(cartItem.id)) {
+      this.#deferredCardPresenter.get(cartItem.id).destroy();
+    }
+
+    const deferredCardPresenter = new DeferredCardPresenter({
+      container: this.#listComponent.element,
+      changeData: this.#viewActionHandler
+    });
+
     this.#deferredCardPresenter.set(cartItem.id, deferredCardPresenter);
+    deferredCardPresenter.init(cartItem);
   };
 
-  #renderClearButton = (container) => {
-    const isCartEmpty = this.#cartModel.getProductCount() === 0;
-
-    if (!this.#clearButtonComponent) {
-      this.#clearButtonComponent = new CartButtonClearView();
-      render(this.#clearButtonComponent, container);
-      this.#clearButtonComponent.setCartButtonClearClickHandler(this.#clearButtonClickHandler);
-    }
+  #renderClearButton = () => {
+    const isCartEmpty = this.#cartModel.productCount === 0;
 
     if (isCartEmpty) {
       this.#clearButtonComponent.hide();
@@ -160,17 +154,41 @@ export default class CartPresenter {
     }
   };
 
-  #renderSummary = (container) => {
-    if (!this.#summaryComponent) {
-      this.#summaryComponent = new SummaryView(this.#cartModel.getProductCount(), this.#cartModel.getSum());
-      render(this.#summaryComponent, container);
-    } else {
-      const prevSummaryComponent = this.#summaryComponent;
-      const updatedSummary = new SummaryView(this.#cartModel.getProductCount(), this.#cartModel.getSum());
-      replace(updatedSummary, this.#summaryComponent);
-      this.#summaryComponent = updatedSummary;
-      remove(prevSummaryComponent);
+  // #renderSummary = () => {
+  //   if (!this.#cartSummaryComponent) {
+  //     this.#cartSummaryComponent = new CartSummaryView({
+  //       productQuantity: this.#cartModel.productCount,
+  //       totalPrice: this.#cartModel.sum
+  //     });
+  //     render(this.#cartSummaryComponent, this.#cartContainerComponent.element);
+  //   } else {
+  //     const prevCartSummaryComponent = this.#cartSummaryComponent;
+  //     this.#cartSummaryComponent = new CartSummaryView({
+  //       productQuantity: this.#cartModel.productCount,
+  //       totalPrice: this.#cartModel.sum
+  //     });
+  //     replace(this.#cartSummaryComponent, prevCartSummaryComponent);
+  //     remove(prevCartSummaryComponent);
+  //   }
+  // };
+
+  #renderSummary = () => {
+    const productQuantity = this.#cartModel.productCount;
+    const totalPrice = this.#cartModel.sum;
+
+    if (this.#summaryComponent === null) {
+      this.#summaryComponent = new CartSummaryView({
+        productQuantity,
+        totalPrice
+      });
+      render(this.#summaryComponent, this.#cartContainerComponent.element);
+      return;
     }
+
+    this.#summaryComponent.updateElement({
+      productQuantity,
+      totalPrice
+    });
   };
 
   #clearCards = () => {
@@ -190,7 +208,7 @@ export default class CartPresenter {
         try {
           await this.#cartModel.increase(updateType, productId);
         } catch {
-          this.#deferredCardPresenter.get(productId).setAborting();
+          this.#deferredCardPresenter.get(productId)?.setAborting();
         }
         break;
 
@@ -225,7 +243,11 @@ export default class CartPresenter {
         });
         try {
           await this.#cartModel.clear();
-        } catch {
+          this.#clearButtonComponent.updateElement({
+            isClearing: false,
+          });
+          this.#clearButtonComponent.hide();
+        } catch (error) {
           this.#clearButtonComponent.updateElement({
             isClearing: false,
           });
@@ -238,6 +260,11 @@ export default class CartPresenter {
   };
 
   #modelEventHandler = (updateType, data) => {
+    let patchedProduct;
+    if (updateType === UpdateType.PATCH) {
+      patchedProduct = this.#getDeferredProducts().find((product) => product.id === data.productId);
+    }
+
     switch (updateType) {
       case UpdateType.INIT:
         this.#isLoading = false;
@@ -245,7 +272,6 @@ export default class CartPresenter {
         this.#renderCart();
         break;
       case UpdateType.PATCH:
-        const patchedProduct = this.items.find((product) => product.id === data.productId);
         if (patchedProduct) {
           const productPresenter = this.#deferredCardPresenter.get(patchedProduct.id);
           if (productPresenter) {
@@ -257,8 +283,9 @@ export default class CartPresenter {
       case UpdateType.MINOR:
       case UpdateType.MAJOR:
         this.#clearCards();
-        this.#renderCartContainer();
-        this.#renderClearButton(this.#cartContainerComponent.element);
+        this.#renderCartMain();
+        this.#renderHero();
+        this.#renderClearButton();
         break;
     }
   };

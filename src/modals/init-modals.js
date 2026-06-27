@@ -1,4 +1,4 @@
-import { Modals } from "./modals";
+import { Modals } from './modals';
 
 let modals;
 
@@ -16,11 +16,11 @@ const settings = {
 };
 
 const initModals = () => {
-  const modalElements = document.querySelectorAll(".modal");
+  const modalElements = document.querySelectorAll('.modal');
   if (modalElements.length) {
     modalElements.forEach((el) => {
       setTimeout(() => {
-        el.classList.remove("modal--preload");
+        el.classList.remove('modal--preload');
       }, 100);
     });
   }
@@ -28,4 +28,5 @@ const initModals = () => {
   modals = new Modals(settings);
 };
 
-export { modals, initModals };
+export { initModals, modals };
+

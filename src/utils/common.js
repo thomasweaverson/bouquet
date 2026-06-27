@@ -1,9 +1,16 @@
-const truncateString = (str) => (str.length > 140 ? str.slice(0, 139) + "…" : str);
+const MAX_STRING_LENGTH = 140;
+const PRICE_THRESHOLD = 1000;
+
+const truncateString = (str) => (
+  str.length > MAX_STRING_LENGTH
+    ? `${str.slice(0, MAX_STRING_LENGTH - 1)}…`
+    : str
+);
 
 const formatPrice = (price) => {
   const priceStr = String(price);
 
-  if (price < 1000) {
+  if (price < PRICE_THRESHOLD) {
     return priceStr;
   }
 
@@ -13,7 +20,4 @@ const formatPrice = (price) => {
   return `${thousands}\u00A0${remainder}`;
 };
 
-const sortByPriceIncrease = (products) => products.sort((a, b) => a.price - b.price);
-const sortByPriceDecrease = (products) => products.sort((a, b) => b.price - a.price);
-
-export { truncateString, formatPrice, sortByPriceIncrease, sortByPriceDecrease };
+export { formatPrice, truncateString };

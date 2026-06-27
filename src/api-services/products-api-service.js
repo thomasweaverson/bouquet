@@ -1,57 +1,78 @@
-import ApiService from "../framework/api-service";
-import { Method } from "../const";
+import ApiService from '../framework/api-service';
+import { ApiRoute, Method } from '../utils/api';
 
 export default class ProductsApiService extends ApiService {
-  get = () =>
-    this._load({ url: "products" })
+  get() {
+    return this._load({ url: ApiRoute.PRODUCTS })
       .then(ApiService.parseResponse)
       .catch(() => null);
+  }
 
-  getProduct = (productId) =>
-    this._load({ url: `products/${productId}` })
+  getProduct(productId) {
+    return this._load({ url: `${ApiRoute.PRODUCTS}/${productId}` })
       .then(ApiService.parseResponse)
       .catch(() => null);
+  }
 
-  addToCart = (productId) =>
-    this._load({ url: `products/${productId}`, method: Method.PUT })
+  addToCart(productId) {
+    return this._load({ url: `${ApiRoute.PRODUCTS}/${productId}`, method: Method.PUT })
       .then(ApiService.parseResponse)
       .catch(() => null);
+  }
 
-  removeFromCart = (productId) =>
-    this._load({ url: `products/${productId}`, method: Method.DELETE })
-      .then((response) => {
-        if (response.ok) {
-          return { status: response.status, ok: true };
-        }
-        throw new Error(`Ошибка: ${response.status}`);
-      })
-      .catch((error) => {
-        return { status: error.message, ok: false };
-      });
+  removeFromCart(productId) {
+    return this._load({ url: `${ApiRoute.PRODUCTS}/${productId}`, method: Method.DELETE })
+      .then((response) =>
+        ({ status: response.status, ok: true })
+      )
+      .catch((error) =>
+        ({ status: error.message, ok: false })
+      );
+  }
 
-  getCart = () =>
-    this._load({ url: "cart" })
+  getCart() {
+    return this._load({ url: ApiRoute.CART })
       .then(ApiService.parseResponse)
       .catch(() => null);
+  }
 
   clearCart = async () => {
     const currentCart = await this.getCart();
 
+    if (!currentCart || !currentCart.products) {
+      throw new Error('Не удалось получить данные корзины для очистки');
+    }
+
+    const deleteRequests = [];
+
     for (const productId in currentCart.products) {
-      if (currentCart.products.hasOwnProperty(productId)) {
+      if (Object.hasOwn(currentCart.products, productId)) {
         const quantity = currentCart.products[productId];
 
         for (let i = 0; i < quantity; i++) {
-          await this.removeFromCart(productId);
+          deleteRequests.push(this.removeFromCart(productId));
         }
       }
     }
 
+    if (deleteRequests.length === 0) {
+      return 'success';
+    }
+
+    const results = await Promise.all(deleteRequests);
+
+    const isAllDeleted = results.every((result) => result && result.ok === true);
+
+    if (!isAllDeleted) {
+      throw new Error('Некоторые товары не удалось удалить из корзины');
+    }
+
     const updatedCart = await this.getCart();
-    if (updatedCart.productCount === 0) {
-      return "success";
+
+    if (updatedCart && updatedCart.productCount === 0) {
+      return 'success';
     } else {
-      throw new Error();
+      throw new Error('Синхронизация с сервером не удалась');
     }
   };
 }

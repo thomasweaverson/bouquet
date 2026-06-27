@@ -1,6 +1,6 @@
-import { UpdateType, UserAction } from "../const";
-import { render, replace, remove } from "../framework/render";
-import CatalogueCardView from "../view/catalogue-card-view";
+import { remove, render, replace } from '../framework/render';
+import { UpdateType, UserAction } from '../utils/const';
+import CatalogueCardView from '../view/catalogue-card-view';
 
 export default class CatalogueCardPresenter {
   #container = null;
@@ -12,7 +12,7 @@ export default class CatalogueCardPresenter {
 
   #product = null;
 
-  constructor(container, changeData, cardClickHandler, cartModel) {
+  constructor({container, changeData, cardClickHandler, cartModel}) {
     this.#container = container;
     this.#changeData = changeData;
     this.#cardClickHandler = cardClickHandler;
@@ -25,7 +25,10 @@ export default class CatalogueCardPresenter {
     const isProductInCart = this.#cartModel.isProductInCart(product.id);
     const prevCardComponent = this.#cardComponent;
 
-    this.#cardComponent = new CatalogueCardView(product, isProductInCart);
+    this.#cardComponent = new CatalogueCardView({
+      product,
+      isInCart: isProductInCart
+    });
 
     this.#cardComponent.setCardClickHandler(this.#cardClickHandler);
     this.#cardComponent.setFavoriteButtonClickHandler(this.#favoriteButtonClickHandler);
@@ -42,6 +45,7 @@ export default class CatalogueCardPresenter {
 
   destroy = () => {
     remove(this.#cardComponent);
+    this.#cardComponent = null;
   };
 
   setProductEditing = () => {
@@ -59,10 +63,7 @@ export default class CatalogueCardPresenter {
 
   #favoriteButtonClickHandler = () => {
     const isProductInCart = this.#cartModel.isProductInCart(this.#product.id);
-    if (isProductInCart) {
-      this.#changeData(UserAction.REMOVE_FROM_CART, UpdateType.MINOR, this.#product.id);
-    } else {
-      this.#changeData(UserAction.ADD_TO_CART, UpdateType.MINOR, this.#product.id);
-    }
+    const action = isProductInCart ? UserAction.REMOVE_FROM_CART : UserAction.ADD_TO_CART;
+    this.#changeData(action, UpdateType.MINOR, this.#product.id);
   };
 }

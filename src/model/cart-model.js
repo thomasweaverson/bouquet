@@ -1,5 +1,5 @@
-import Observable from "../framework/observable";
-import { UpdateType, InitOrigin } from "../const";
+import Observable from '../framework/observable';
+import { InitOrigin, UpdateType } from '../utils/const';
 
 export default class CartModel extends Observable {
   #cart = {
@@ -17,32 +17,43 @@ export default class CartModel extends Observable {
     this.#productsModel = productsModel;
   }
 
+  get cart() {
+    return this.#cart;
+  }
+
+  get productCount() {
+    return this.#cart.productCount;
+  }
+
+  get sum() {
+    return this.#cart.sum;
+  }
+
   init = async () => {
     const emptyCart = {
       products: {},
       productCount: 0,
       sum: 0,
     };
+
     try {
       const cart = await this.#apiService.getCart();
-      this.#cart = cart;
 
-      if (Object.keys(cart).length === 0) {
+      if (!cart || Object.keys(cart).length === 0) {
         this.#cart = { ...emptyCart };
+      } else {
+        this.#cart = cart;
       }
     } catch (err) {
       this.#cart = { ...emptyCart };
     }
+
     this._notify(UpdateType.INIT, { cart: this.#cart, origin: InitOrigin.CART_MODEL });
   };
 
-  get = () => this.#cart;
-
-  getProductCount = () => this.#cart.productCount;
-
-  getSum = () => this.#cart.sum;
-
-  isProductInCart = (productId) => !!this.#cart.products[productId];
+  isProductInCart (productId) {
+    return !!this.#cart.products[productId];
+  }
 
   increase = async (updateType, productId) => {
     await this.add(updateType, productId);
@@ -57,7 +68,7 @@ export default class CartModel extends Observable {
     if (response.ok) {
       this.#localRemove(productId);
     } else {
-      throw new Error();
+      throw new Error('Не удалось уменьшить количество товара в корзине');
     }
 
     this._notify(updateType, { productId, isProductInCart: true });
@@ -77,21 +88,27 @@ export default class CartModel extends Observable {
 
   removeFull = async (updateType, productId) => {
     const quantity = this.#cart.products[productId];
+    const deleteRequests = [];
 
     for (let i = 0; i < quantity; i += 1) {
-      const response = await this.#apiService.removeFromCart(productId);
-      if (response.ok) {
-        this.#localRemove(productId);
-      } else {
-        throw new Error();
-      }
+      deleteRequests.push(this.#apiService.removeFromCart(productId));
     }
+
+    const results = await Promise.all(deleteRequests);
+    const isAllDeleted = results.every((result) => result && result.ok);
+
+    if (isAllDeleted) {
+      this.#localFullRemove(productId, quantity);
+    } else {
+      throw new Error('Не удалось полностью удалить товар из корзины');
+    }
+
     this._notify(updateType, { productId, isProductInCart: false });
   };
 
   clear = async () => {
     const isCartClearSuccess = await this.#apiService.clearCart();
-    if (isCartClearSuccess === "success") {
+    if (isCartClearSuccess === 'success') {
       this.#cart = {
         products: {},
         productCount: 0,
@@ -135,5 +152,20 @@ export default class CartModel extends Observable {
         sum: this.#cart.sum - this.#productsModel.getProduct(productId).price,
       };
     }
+  };
+
+  #localFullRemove = (productId, quantity) => {
+    const previousProducts = this.#cart.products;
+    delete previousProducts[productId];
+    const remainingProducts = { ...previousProducts };
+
+    const productPrice = this.#productsModel.getProduct(productId).price;
+
+    this.#cart = {
+      ...this.#cart,
+      products: remainingProducts,
+      productCount: this.#cart.productCount - quantity,
+      sum: this.#cart.sum - (productPrice * quantity),
+    };
   };
 }

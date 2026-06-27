@@ -1,9 +1,9 @@
-import PopupGalleryView from "../view/popup-gallery-view.js";
-import PopupDescriptionView from "../view/popup-description-view.js";
-import PopupErrorLoadingView from "../view/popup-error-loading-view.js";
+import PopupDescriptionView from '../view/popup-description-view.js';
+import PopupErrorLoadingView from '../view/popup-error-loading-view.js';
+import PopupGalleryView from '../view/popup-gallery-view.js';
 
-import { render, replace, remove } from "../framework/render.js";
-import { UpdateType, UserAction } from "../const.js";
+import { remove, render, replace } from '../framework/render.js';
+import { UpdateType, UserAction } from '../utils/const.js';
 
 export default class PopupPresenter {
   #container = null;
@@ -16,7 +16,7 @@ export default class PopupPresenter {
 
   #product = null;
 
-  constructor(container, changeData, cartModel) {
+  constructor({container, changeData, cartModel}) {
     this.#container = container;
     this.#changeData = changeData;
     this.#cartModel = cartModel;
@@ -24,7 +24,7 @@ export default class PopupPresenter {
     this.#cartModel.addObserver(this.#modelEventHandler);
   }
 
-  init(product) {
+  init = (product) => {
     this.#product = product;
 
     const isProductInCart = this.#cartModel.isProductInCart(product.id);
@@ -32,13 +32,17 @@ export default class PopupPresenter {
     const prevGalleryComponent = this.#galleryComponent;
     const prevDescriptionComponent = this.#descriptionComponent;
 
-    this.#galleryComponent = new PopupGalleryView(product.images, product.title, product.authorPhoto);
-    this.#descriptionComponent = new PopupDescriptionView(
-      product.title,
-      product.description,
-      product.price,
-      isProductInCart,
-    );
+    this.#galleryComponent = new PopupGalleryView({
+      images: product.images,
+      title: product.title,
+      authorPhoto: product.authorPhoto,
+    });
+    this.#descriptionComponent = new PopupDescriptionView({
+      title: product.title,
+      description: product.description,
+      price: product.price,
+      isInCart: isProductInCart,
+    });
 
     this.#descriptionComponent.setDeferButtonClickHandler(this.#deferButtonClickHandler);
 
@@ -53,23 +57,27 @@ export default class PopupPresenter {
 
     remove(prevGalleryComponent);
     remove(prevDescriptionComponent);
-  }
+  };
 
-  productErrorLoadingRender() {
+  renderProductErrorLoading = () => {
     remove(this.#galleryComponent);
     remove(this.#descriptionComponent);
     this.#galleryComponent = null;
     this.#descriptionComponent = null;
     render(this.#errorLoadingComponent, this.#container);
-  }
+  };
 
-  clear() {
+  destroy = () => {
+    this.#cartModel.removeObserver(this.#modelEventHandler);
+
     remove(this.#galleryComponent);
     remove(this.#descriptionComponent);
     remove(this.#errorLoadingComponent);
+
     this.#galleryComponent = null;
     this.#descriptionComponent = null;
-  }
+    this.#product = null;
+  };
 
   setProductEditing = () => {
     this.#descriptionComponent.updateElement({
@@ -82,12 +90,12 @@ export default class PopupPresenter {
     this.#descriptionComponent.shakeDeferButton();
   };
 
-  #updateDescriptionComponent(isProductInCart) {
+  #updateDescriptionComponent = (isProductInCart) => {
     this.#descriptionComponent.updateElement({
       isEditing: false,
       isInCart: isProductInCart,
     });
-  }
+  };
 
   #deferButtonClickHandler = () => {
     const isProductInCart = this.#cartModel.isProductInCart(this.#product.id);
@@ -98,10 +106,12 @@ export default class PopupPresenter {
     }
   };
 
-  #modelEventHandler = (updateType, { productId, isProductInCart }) => {
+  #modelEventHandler = (updateType, data = {}) => {
     if (this.#product === null) {
       return;
     }
+
+    const { productId, isProductInCart } = data;
 
     switch (updateType) {
       case UpdateType.PATCH:

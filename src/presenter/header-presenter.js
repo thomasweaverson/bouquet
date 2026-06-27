@@ -1,5 +1,5 @@
-import HeaderCountView from "../view/header-count-view.js";
-import { remove, render, replace } from "../framework/render.js";
+import { remove, render, replace } from '../framework/render.js';
+import HeaderCountView from '../view/header-count-view.js';
 
 export default class HeaderPresenter {
   #container = null;
@@ -7,34 +7,37 @@ export default class HeaderPresenter {
 
   #cartModel = null;
   #cartPresenter = null;
+  #isCartOpen = false;
 
   #productCount = 0;
   #sum = 0;
 
-  constructor(container, cartModel, cartPresenter) {
+  constructor({container, cartModel, cartPresenter}) {
     this.#container = container;
     this.#cartModel = cartModel;
     this.#cartPresenter = cartPresenter;
+
+    this.#isCartOpen = this.#cartPresenter.isCartOpen;
 
     this.#cartModel.addObserver(this.#modelEventHandler);
   }
 
   init = () => {
-    this.#productCount = this.#cartModel.getProductCount();
-    this.#sum = this.#cartModel.getSum();
+    this.#productCount = this.#cartModel.productCount;
+    this.#sum = this.#cartModel.sum;
+    this.#isCartOpen = this.#cartPresenter.isCartOpen;
 
     const prevHeaderCountComponent = this.#headerCountComponent;
 
-    this.#headerCountComponent = new HeaderCountView(
-      this.#productCount,
-      this.#sum
-    );
+    this.#headerCountComponent = new HeaderCountView({
+      productCount: this.#productCount,
+      sum: this.#sum,
+      isCartOpen: this.#isCartOpen
+    });
 
     this.#headerCountComponent.setButtonCartClickHandler(() => {
-      const isCartOpen = this.#cartPresenter.isCartOpen;
-      if (!isCartOpen) {
-        this.#cartPresenter.toggleCart();
-      }
+      this.#cartPresenter.toggleCart();
+      this.init();
     });
 
     if (prevHeaderCountComponent === null) {
@@ -44,7 +47,7 @@ export default class HeaderPresenter {
 
     replace(this.#headerCountComponent, prevHeaderCountComponent);
     remove(prevHeaderCountComponent);
-  }
+  };
 
   #modelEventHandler = () => {
     this.init();

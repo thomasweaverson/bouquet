@@ -1,11 +1,10 @@
 import AbstractView from '../framework/view/abstract-view.js';
 
-const createProductsListNoRelevantViewTemplate = () =>
-  `
-    <section class="no-relevant">
-      <h2 class="no-relevant__title">К сожалению, таких букетов у нас пока нет</h2>
-    </div>
-  `;
+const createProductsListNoRelevantViewTemplate = () => `
+  <div class="message catalogue__no-items">
+    <p class="text text--align-center message__text">К сожалению, таких букетов у нас пока нет</p>
+  </div>
+`;
 
 export default class ProductsListNoRelevantView extends AbstractView {
   get template() {

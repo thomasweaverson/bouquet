@@ -1,7 +1,7 @@
-import DeferredCardView from "../view/deferred-card-view.js";
-import { UpdateType, UserAction } from "../const.js";
+import { UpdateType, UserAction } from '../utils/const.js';
+import DeferredCardView from '../view/deferred-card-view.js';
 
-import { remove, render, replace } from "../framework/render.js";
+import { remove, render, replace } from '../framework/render.js';
 
 export default class DeferredCardPresenter {
   #container = null;
@@ -11,16 +11,19 @@ export default class DeferredCardPresenter {
 
   #product = null;
 
-  constructor(container, changeData) {
+  constructor({container, changeData}) {
     this.#container = container;
     this.#changeData = changeData;
   }
 
-  init(product) {
+  init = (product) => {
     this.#product = product;
     const prevCardComponent = this.#cardComponent;
 
-    this.#cardComponent = new DeferredCardView(this.#product, this.#product.quantity);
+    this.#cardComponent = new DeferredCardView({
+      product: this.#product,
+      count: this.#product.quantity,
+    });
 
     this.#cardComponent.setDeleteButtonClickHandler(this.#deleteButtonClickHandler);
     this.#cardComponent.setDecreaseCountClickHandler(this.#decreaseCountClickHandler);
@@ -34,10 +37,11 @@ export default class DeferredCardPresenter {
     replace(this.#cardComponent, prevCardComponent);
 
     remove(prevCardComponent);
-  }
+  };
 
   destroy = () => {
     remove(this.#cardComponent);
+    this.#cardComponent = null;
   };
 
   setCardEditing = () => {
